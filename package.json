@@ -1,0 +1,50 @@
+{
+  "name": "apollo-datasource-mongodb",
+  "version": "0.0.2",
+  "description": "Apollo data source for MongoDB",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "babel src -d dist --ignore **/*.test.js",
+    "dev": "babel src -d dist --watch --ignore **/*.test.js",
+    "test": "jest --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "engines": {
+    "node": ">=8"
+  },
+  "dependencies": {
+    "apollo-datasource": "^0.3.1",
+    "apollo-server-caching": "^0.3.1",
+    "apollo-server-errors": "^2.2.1",
+    "dataloader": "^1.4.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.4.3",
+    "@babel/core": "^7.4.3",
+    "@babel/preset-env": "^7.4.3",
+    "babel-jest": "^24.7.1",
+    "graphql": "^14.2.1",
+    "jest": "^24.7.1",
+    "waait": "^1.0.4"
+  },
+  "homepage": "https://github.com/GraphQLGuide/apollo-datasource-mongodb",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GraphQLGuide/apollo-datasource-mongodb"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/GraphQLGuide/apollo-datasource-mongodb/issues"
+  },
+  "author": "Loren Sands-Ramshaw <loren@graphql.guide> (https://graphql.guide)",
+  "keywords": [
+    "apollo",
+    "datasource",
+    "data source",
+    "mongodb",
+    "mongo"
+  ],
+  "files": [
+    "/dist"
+  ]
+}
