@@ -17,6 +17,7 @@ This package uses [DataLoader](https://github.com/graphql/dataloader) for batchi
 **Contents:**
 
 - [Usage](#usage)
+  - [Basic](#basic)
   - [Batching](#batching)
   - [Caching](#caching)
 - [API](#api)
