@@ -7,7 +7,8 @@
     "build": "babel src -d dist --ignore **/*.test.js",
     "dev": "babel src -d dist --watch --ignore **/*.test.js",
     "test": "jest --watch",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "prettify": "prettier --write **/*.js"
   },
   "engines": {
     "node": ">=8"
@@ -25,6 +26,7 @@
     "babel-jest": "^24.7.1",
     "graphql": "^14.2.1",
     "jest": "^24.7.1",
+    "prettier": "^1.16.4",
     "waait": "^1.0.4"
   },
   "homepage": "https://github.com/GraphQLGuide/apollo-datasource-mongodb",
