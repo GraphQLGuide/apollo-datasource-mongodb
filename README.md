@@ -29,6 +29,8 @@ This package uses [DataLoader](https://github.com/graphql/dataloader) for batchi
 
 ## Usage
 
+### Basic
+
 The basic setup is subclassing `MongoDataSource`, setting your collections in the constructor, and then using the [API methods](#API) on your collections:
 
 ```js
@@ -42,6 +44,38 @@ class MyMongo extends MongoDataSource {
 
   getUser(userId) {
     return users.findOneById(userId)
+  }
+}
+```
+
+The request's context is available at `this.context`. For example, if you put the logged-in user's ID on context as `context.currentUserId`:
+
+```js
+class MyMongo extends MongoDataSource {
+  ...
+
+  async getPrivateUserData(userId) {
+    const isAuthorized = this.context.currentUserId === userId
+    if (isAuthorized) {
+      const user = await users.findOneById(userId)
+      return user && user.privateData
+    }
+  }
+}
+```
+
+If you want to implement an initialize method, it must call the parent method:
+
+```js
+class MyMongo extends MongoDataSource {
+  constructor() {
+    super()
+    this.collections = [users, posts]
+  }
+
+  initialize(config) {
+    super.initialize(config)
+    ...
   }
 }
 ```

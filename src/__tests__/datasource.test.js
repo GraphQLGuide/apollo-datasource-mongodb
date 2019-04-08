@@ -8,6 +8,10 @@ class MyMongo extends MongoDataSource {
     super()
     this.collections = [users, posts]
   }
+
+  initialize(config) {
+    super.initialize(config)
+  }
 }
 
 describe('MongoDataSource', () => {
