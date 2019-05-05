@@ -32,24 +32,27 @@ This package uses [DataLoader](https://github.com/graphql/dataloader) for batchi
 
 ### Basic
 
-The basic setup is subclassing `MongoDataSource`, setting your collections in the constructor, and then using the [API methods](#API):
+The basic setup is subclassing `MongoDataSource`, passing your collection(s) to the constructor, and using the [API methods](#API):
 
 ```js
 import { MongoDataSource } from 'apollo-datasource-mongodb'
 
 class MyMongo extends MongoDataSource {
-  constructor() {
-    super()
-    this.collections = { users, posts }
-  }
-
   getUser(userId) {
     return this.users.findOneById(userId)
   }
 }
+
+const server = new ApolloServer({
+  typeDefs,
+  resolvers,
+  dataSources: () => ({
+    db: new MyMongo({ users, posts })
+  })
+})
 ```
 
-The request's context is available at `this.context`. For example, if you put the logged-in user's ID on context as `context.currentUserId`:
+The collections are available at `this.collections` (e.g. `this.collections.users.update({_id: 'foo, { $set: { name: 'me' }}})`). The request's context is available at `this.context`. For example, if you put the logged-in user's ID on context as `context.currentUserId`:
 
 ```js
 class MyMongo extends MongoDataSource {
@@ -69,11 +72,6 @@ If you want to implement an initialize method, it must call the parent method:
 
 ```js
 class MyMongo extends MongoDataSource {
-  constructor() {
-    super()
-    this.collections = { users, posts }
-  }
-
   initialize(config) {
     super.initialize(config)
     ...
@@ -101,11 +99,6 @@ client.connect(e => {
 })
 
 class MyMongo extends MongoDataSource {
-  constructor() {
-    super()
-    this.collections = { users, posts }
-  }
-
   getUser(userId) {
     return this.users.findOneById(userId)
   }
@@ -128,7 +121,7 @@ const server = new ApolloServer({
   typeDefs,
   resolvers,
   dataSources: () => ({
-    db: new MyMongo()
+    db: new MyMongo({ users, posts })
   })
 })
 ```
