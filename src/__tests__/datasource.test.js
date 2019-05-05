@@ -1,9 +1,8 @@
 import { MongoDataSource } from '../datasource'
 
 const users = {}
-const posts = {}
 
-class MyMongo extends MongoDataSource {
+class Users extends MongoDataSource {
   initialize(config) {
     super.initialize(config)
   }
@@ -11,9 +10,9 @@ class MyMongo extends MongoDataSource {
 
 describe('MongoDataSource', () => {
   it('sets up caching functions', () => {
-    const source = new MyMongo({ users, posts })
+    const source = new Users({ users })
     source.initialize({})
-    expect(source.users.findOneById).toBeDefined()
-    expect(source.posts.findOneById).toBeDefined()
+    expect(source.findOneById).toBeDefined()
+    expect(source.users).toEqual(users)
   })
 })

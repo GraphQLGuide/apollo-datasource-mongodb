@@ -5,17 +5,19 @@ import { InMemoryLRUCache } from 'apollo-server-caching'
 import { createCachingMethods } from './cache'
 
 class MongoDataSource extends DataSource {
-  constructor(collections) {
+  constructor(collection) {
     super()
 
-    const setUpCorrectly = typeof collections === 'object'
+    const setUpCorrectly =
+      typeof collection === 'object' && Object.keys(collection).length === 1
     if (!setUpCorrectly) {
       throw new ApolloError(
-        'MongoDataSource constructor must be given an object with collection(s)'
+        'MongoDataSource constructor must be given an object with a single collection'
       )
     }
 
-    this.collections = collections
+    this.collectionName = Object.keys(collection)[0]
+    this[this.collectionName] = collection[this.collectionName]
   }
 
   // https://github.com/apollographql/apollo-server/blob/master/packages/apollo-datasource/src/index.ts
@@ -24,12 +26,11 @@ class MongoDataSource extends DataSource {
 
     const cache = config.cache || new InMemoryLRUCache()
 
-    for (const key in this.collections) {
-      this[key] = createCachingMethods({
-        collection: this.collections[key],
-        cache
-      })
-    }
+    const methods = createCachingMethods({
+      collection: this[this.collectionName],
+      cache
+    })
+    Object.assign(this, methods)
   }
 }
 

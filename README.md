@@ -32,36 +32,44 @@ This package uses [DataLoader](https://github.com/graphql/dataloader) for batchi
 
 ### Basic
 
-The basic setup is subclassing `MongoDataSource`, passing your collection(s) to the constructor, and using the [API methods](#API):
+The basic setup is subclassing `MongoDataSource`, passing your collection to the constructor, and using the [API methods](#API):
 
 ```js
 import { MongoDataSource } from 'apollo-datasource-mongodb'
 
-class MyMongo extends MongoDataSource {
+export default class Users extends MongoDataSource {
   getUser(userId) {
-    return this.users.findOneById(userId)
+    return this.findOneById(userId)
   }
 }
+```
+
+and:
+
+```js
+import Users from './data-sources/Users.js'
+
+const users = db.collection('users')
 
 const server = new ApolloServer({
   typeDefs,
   resolvers,
   dataSources: () => ({
-    db: new MyMongo({ users, posts })
+    db: new Users({ users })
   })
 })
 ```
 
-The collections are available at `this.collections` (e.g. `this.collections.users.update({_id: 'foo, { $set: { name: 'me' }}})`). The request's context is available at `this.context`. For example, if you put the logged-in user's ID on context as `context.currentUserId`:
+The collection is available at `this.users` (e.g. `this.users.update({_id: 'foo, { $set: { name: 'me' }}})`). The request's context is available at `this.context`. For example, if you put the logged-in user's ID on context as `context.currentUserId`:
 
 ```js
-class MyMongo extends MongoDataSource {
+class Users extends MongoDataSource {
   ...
 
   async getPrivateUserData(userId) {
     const isAuthorized = this.context.currentUserId === userId
     if (isAuthorized) {
-      const user = await this.users.findOneById(userId)
+      const user = await this.findOneById(userId)
       return user && user.privateData
     }
   }
@@ -71,7 +79,7 @@ class MyMongo extends MongoDataSource {
 If you want to implement an initialize method, it must call the parent method:
 
 ```js
-class MyMongo extends MongoDataSource {
+class Users extends MongoDataSource {
   initialize(config) {
     super.initialize(config)
     ...
@@ -84,68 +92,13 @@ class MyMongo extends MongoDataSource {
 This is the main feature, and is always enabled. Here's a full example:
 
 ```js
-import { MongoClient } from 'mongodb'
-import { MongoDataSource } from 'apollo-datasource-mongodb'
-import { ApolloServer } from 'apollo-server'
-
-let users
-let posts
-
-const client = new MongoClient('mongodb://localhost:27017')
-
-client.connect(e => {
-  users = client.db('users')
-  posts = client.db('posts')
-})
-
-class MyMongo extends MongoDataSource {
-  getUser(userId) {
-    return this.users.findOneById(userId)
-  }
-
-  getPosts(postIds) {
-    return this.posts.findManyByIds(postIds)
-  }
-}
-
-const resolvers = {
-  Post: {
-    author: (post, _, { db }) => db.getUser(post.authorId)
-  },
-  User: {
-    posts: (user, _, { db }) => db.getPosts(user.postIds)
-  }
-}
-
-const server = new ApolloServer({
-  typeDefs,
-  resolvers,
-  dataSources: () => ({
-    db: new MyMongo({ users, posts })
-  })
-})
-```
-
-You might prefer to structure it as one data source per collection, in which case you'd set `this.collection` instead of `this.collections`, and the [API methods](#api) would be available directly on `this`:
-
-```js
 class Users extends MongoDataSource {
-  constructor() {
-    super()
-    this.collection = users
-  }
-
   getUser(userId) {
     return this.findOneById(userId)
   }
 }
 
 class Posts extends MongoDataSource {
-  constructor() {
-    super()
-    this.collection = posts
-  }
-
   getPosts(postIds) {
     return this.findManyByIds(postIds)
   }
@@ -160,17 +113,18 @@ const resolvers = {
   }
 }
 
+const users = db.collection('users')
+const posts = db.collection('posts')
+
 const server = new ApolloServer({
   typeDefs,
   resolvers,
   dataSources: () => ({
-    users: new Users(),
-    posts: new Posts()
+    users: new Users({ users }),
+    posts: new Posts({ posts })
   })
 })
 ```
-
-This is purely a code structure choice—it doesn't affect batching or caching. The latter option probably makes more sense if you have more than a few methods in your class.
 
 ### Caching
 
@@ -179,19 +133,14 @@ To enable shared application-level caching, you do everything from the above sec
 ```js
 const MINUTE = 60
 
-class MyMongo extends MongoDataSource {
-  constructor() {
-    super()
-    this.collections = { users, posts }
-  }
-
+class Users extends MongoDataSource {
   getUser(userId) {
-    return this.users.findOneById(userId, { ttl: MINUTE })
+    return this.findOneById(userId, { ttl: MINUTE })
   }
 
   updateUserName(userId, newName) {
-    this.users.deleteFromCacheById(userId)
-    return users.updateOne({ 
+    this.deleteFromCacheById(userId)
+    return this.users.updateOne({ 
       _id: userId 
     }, {
       $set: { name: newName }
@@ -200,12 +149,12 @@ class MyMongo extends MongoDataSource {
 }
 
 const resolvers = {
-  User: {
-    posts: (user, _, { db }) => db.getPosts(user.postIds)
+  Post: {
+    author: (post, _, { users }) => users.getUser(post.authorId)
   },
   Mutation: {
-    changeName: (_, { userId, newName }, { db, currentUserId }) => 
-      currentUserId === userId && db.updateUserName(userId, newName)
+    changeName: (_, { userId, newName }, { users, currentUserId }) => 
+      currentUserId === userId && users.updateUserName(userId, newName)
   }
 }
 ```
@@ -216,18 +165,18 @@ Here we also call [`deleteFromCacheById()`](#deletefromcachebyid) to remove the 
 
 ### findOneById
 
-`findOneById(id, { ttl })`
+`this.findOneById(id, { ttl })`
 
 Resolves to the found document. Uses DataLoader to load `id`. DataLoader uses `collection.find({ _id: { $in: ids } })`. Optionally caches the document if `ttl` is set (in whole seconds).
 
 ### findManyByIds
 
-`findManyByIds(ids, { ttl })`
+`this.findManyByIds(ids, { ttl })`
 
 Calls [`findOneById()`](#findonebyid) for each id. Resolves to an array of documents.
 
 ### deleteFromCacheById
 
-`deleteFromCacheById(id)`
+`this.deleteFromCacheById(id)`
 
 Deletes a document from the cache.
