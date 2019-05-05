@@ -6,7 +6,7 @@ const posts = {}
 class MyMongo extends MongoDataSource {
   constructor() {
     super()
-    this.collections = [users, posts]
+    this.collections = { users, posts }
   }
 
   initialize(config) {
@@ -14,11 +14,24 @@ class MyMongo extends MongoDataSource {
   }
 }
 
+class SingleCollection extends MongoDataSource {
+  constructor() {
+    super()
+    this.collection = users
+  }
+}
+
 describe('MongoDataSource', () => {
   it('sets up caching functions', () => {
     const source = new MyMongo()
     source.initialize({})
-    expect(users.findOneById).toBeDefined()
-    expect(posts.findOneById).toBeDefined()
+    expect(source.users.findOneById).toBeDefined()
+    expect(source.posts.findOneById).toBeDefined()
+  })
+
+  it('sets up caching functions for single collection', () => {
+    const source = new SingleCollection()
+    source.initialize({})
+    expect(source.findOneById).toBeDefined()
   })
 })

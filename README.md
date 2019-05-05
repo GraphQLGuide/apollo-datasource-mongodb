@@ -6,7 +6,7 @@ Apollo [data source](https://www.apollographql.com/docs/apollo-server/features/d
 npm i apollo-datasource-mongodb
 ```
 
-This package uses [DataLoader](https://github.com/graphql/dataloader) for batching and per-request memoization caching. It also optionally (if you provide a `ttl`), does shared application-level caching (using either the default Apollo `InMemoryLRUCache` or the [cache you provide to ApolloServer()](https://www.apollographql.com/docs/apollo-server/features/data-sources#using-memcachedredis-as-a-cache-storage-backend)). It does this only for these two methods, which are added to your collections:
+This package uses [DataLoader](https://github.com/graphql/dataloader) for batching and per-request memoization caching. It also optionally (if you provide a `ttl`), does shared application-level caching (using either the default Apollo `InMemoryLRUCache` or the [cache you provide to ApolloServer()](https://www.apollographql.com/docs/apollo-server/features/data-sources#using-memcachedredis-as-a-cache-storage-backend)). It does this only for these two methods:
 
 - [`findOneById(id, options)`](#findonebyid)
 - [`findManyByIds(ids, options)`](#findmanybyids)
@@ -32,7 +32,7 @@ This package uses [DataLoader](https://github.com/graphql/dataloader) for batchi
 
 ### Basic
 
-The basic setup is subclassing `MongoDataSource`, setting your collections in the constructor, and then using the [API methods](#API) on your collections:
+The basic setup is subclassing `MongoDataSource`, setting your collections in the constructor, and then using the [API methods](#API):
 
 ```js
 import { MongoDataSource } from 'apollo-datasource-mongodb'
@@ -40,11 +40,11 @@ import { MongoDataSource } from 'apollo-datasource-mongodb'
 class MyMongo extends MongoDataSource {
   constructor() {
     super()
-    this.collections = [users, posts]
+    this.collections = { users, posts }
   }
 
   getUser(userId) {
-    return users.findOneById(userId)
+    return this.users.findOneById(userId)
   }
 }
 ```
@@ -58,7 +58,7 @@ class MyMongo extends MongoDataSource {
   async getPrivateUserData(userId) {
     const isAuthorized = this.context.currentUserId === userId
     if (isAuthorized) {
-      const user = await users.findOneById(userId)
+      const user = await this.users.findOneById(userId)
       return user && user.privateData
     }
   }
@@ -71,7 +71,7 @@ If you want to implement an initialize method, it must call the parent method:
 class MyMongo extends MongoDataSource {
   constructor() {
     super()
-    this.collections = [users, posts]
+    this.collections = { users, posts }
   }
 
   initialize(config) {
@@ -103,15 +103,15 @@ client.connect(e => {
 class MyMongo extends MongoDataSource {
   constructor() {
     super()
-    this.collections = [users, posts]
+    this.collections = { users, posts }
   }
 
   getUser(userId) {
-    return users.findOneById(userId)
+    return this.users.findOneById(userId)
   }
 
   getPosts(postIds) {
-    return posts.findManyByIds(postIds)
+    return this.posts.findManyByIds(postIds)
   }
 }
 
@@ -133,28 +133,28 @@ const server = new ApolloServer({
 })
 ```
 
-You might prefer to structure it as one data source per collection, in which case you'd do:
+You might prefer to structure it as one data source per collection, in which case you'd set `this.collection` instead of `this.collections`, and the [API methods](#api) would be available directly on `this`:
 
 ```js
 class Users extends MongoDataSource {
   constructor() {
     super()
-    this.collections = [users]
+    this.collection = users
   }
 
   getUser(userId) {
-    return users.findOneById(userId)
+    return this.findOneById(userId)
   }
 }
 
 class Posts extends MongoDataSource {
   constructor() {
     super()
-    this.collections = [posts]
+    this.collection = posts
   }
 
   getPosts(postIds) {
-    return posts.findManyByIds(postIds)
+    return this.findManyByIds(postIds)
   }
 }
 
@@ -189,15 +189,15 @@ const MINUTE = 60
 class MyMongo extends MongoDataSource {
   constructor() {
     super()
-    this.collections = [users, posts]
+    this.collections = { users, posts }
   }
 
   getUser(userId) {
-    return users.findOneById(userId, { ttl: MINUTE })
+    return this.users.findOneById(userId, { ttl: MINUTE })
   }
 
   updateUserName(userId, newName) {
-    users.deleteFromCacheById(userId)
+    this.users.deleteFromCacheById(userId)
     return users.updateOne({ 
       _id: userId 
     }, {
@@ -223,18 +223,18 @@ Here we also call [`deleteFromCacheById()`](#deletefromcachebyid) to remove the 
 
 ### findOneById
 
-`collection.findOneById(id, { ttl })`
+`findOneById(id, { ttl })`
 
 Resolves to the found document. Uses DataLoader to load `id`. DataLoader uses `collection.find({ _id: { $in: ids } })`. Optionally caches the document if `ttl` is set (in whole seconds).
 
 ### findManyByIds
 
-`collection.findManyByIds(ids, { ttl })`
+`findManyByIds(ids, { ttl })`
 
 Calls [`findOneById()`](#findonebyid) for each id. Resolves to an array of documents.
 
 ### deleteFromCacheById
 
-`collection.deleteFromCacheById(id)`
+`deleteFromCacheById(id)`
 
 Deletes a document from the cache.

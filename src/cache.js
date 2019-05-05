@@ -1,6 +1,6 @@
 import DataLoader from 'dataloader'
 
-export const setupCaching = ({ collection, cache }) => {
+export const createCachingMethods = ({ collection, cache }) => {
   const loader = new DataLoader(ids =>
     collection
       .find({ _id: { $in: ids } })
@@ -16,26 +16,28 @@ export const setupCaching = ({ collection, cache }) => {
 
   const cachePrefix = `mongo-${collection.collectionName}-`
 
-  collection.findOneById = async (id, { ttl } = {}) => {
-    const key = cachePrefix + id
+  const methods = {
+    findOneById: async (id, { ttl } = {}) => {
+      const key = cachePrefix + id
 
-    const cacheDoc = await cache.get(key)
-    if (cacheDoc) {
-      return cacheDoc
-    }
+      const cacheDoc = await cache.get(key)
+      if (cacheDoc) {
+        return cacheDoc
+      }
 
-    const doc = await loader.load(id)
-    if (Number.isInteger(ttl)) {
-      // https://github.com/apollographql/apollo-server/tree/master/packages/apollo-server-caching#apollo-server-caching
-      cache.set(key, doc, { ttl })
-    }
+      const doc = await loader.load(id)
+      if (Number.isInteger(ttl)) {
+        // https://github.com/apollographql/apollo-server/tree/master/packages/apollo-server-caching#apollo-server-caching
+        cache.set(key, doc, { ttl })
+      }
 
-    return doc
+      return doc
+    },
+    findManyByIds: (ids, { ttl } = {}) => {
+      return Promise.all(ids.map(id => methods.findOneById(id, { ttl })))
+    },
+    deleteFromCacheById: id => cache.delete(cachePrefix + id)
   }
 
-  collection.findManyByIds = (ids, { ttl } = {}) => {
-    return Promise.all(ids.map(id => collection.findOneById(id, { ttl })))
-  }
-
-  collection.deleteFromCacheById = id => cache.delete(cachePrefix + id)
+  return methods
 }
