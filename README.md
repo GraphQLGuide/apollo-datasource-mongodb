@@ -20,6 +20,7 @@ This package uses [DataLoader](https://github.com/graphql/dataloader) for batchi
   - [Basic](#basic)
   - [Batching](#batching)
   - [Caching](#caching)
+  - [Mongoose](#mongoose)
 - [API](#api)
   - [findOneById](#findonebyid)
   - [findManyByIds](#findmanybyids)
@@ -85,6 +86,26 @@ class Users extends MongoDataSource {
     ...
   }
 }
+```
+
+### Mongoose
+
+You can use mongoose the same way as with the native mongodb client
+
+```js
+import mongoose from 'mongoose'
+import Users from './data-sources/Users.js'
+
+const userSchema = new mongoose.Schema({ name: 'string'});
+const UsersModel = mongoose.model('users', userSchema);
+
+const server = new ApolloServer({
+  typeDefs,
+  resolvers,
+  dataSources: () => ({
+    db: new Users({ users: UsersModel })
+  })
+})
 ```
 
 ### Batching
