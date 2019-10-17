@@ -1,6 +1,10 @@
-import { MongoDataSource } from '../datasource'
+import { MongoClient } from 'mongodb'
+import mongoose, { Schema, model } from 'mongoose'
 
-const users = {}
+import { MongoDataSource } from '../datasource'
+import { isModel, isCollectionOrModel, getCollection } from '../helpers'
+
+mongoose.set('useFindAndModify', false)
 
 class Users extends MongoDataSource {
   initialize(config) {
@@ -10,9 +14,78 @@ class Users extends MongoDataSource {
 
 describe('MongoDataSource', () => {
   it('sets up caching functions', () => {
-    const source = new Users({ users })
-    source.initialize({})
+    const users = {}
+    const source = new Users(users)
+    source.initialize()
     expect(source.findOneById).toBeDefined()
-    expect(source.users).toEqual(users)
+    expect(source.collection).toEqual(users)
+  })
+})
+
+const URL = 'mongodb://localhost:27017/test'
+const connectArgs = [
+  URL,
+  {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  }
+]
+
+const connect = async () => {
+  const client = new MongoClient(...connectArgs)
+  await mongoose.connect(...connectArgs)
+  await client.connect()
+  return client.db()
+}
+
+describe('Mongoose', () => {
+  let UserModel
+  let userCollection
+  let alice
+
+  beforeAll(async () => {
+    const userSchema = new Schema({ name: 'string' })
+    UserModel = model('User', userSchema)
+
+    const db = await connect()
+    userCollection = db.collection('users')
+    alice = await UserModel.findOneAndUpdate(
+      { name: 'Alice' },
+      { name: 'Alice' },
+      { upsert: true }
+    )
+  })
+
+  test('isCollectionOrModel', () => {
+    expect(isCollectionOrModel(userCollection)).toBe(true)
+    expect(isCollectionOrModel(UserModel)).toBe(true)
+    expect(isCollectionOrModel(Function.prototype)).toBe(false)
+    expect(isCollectionOrModel(undefined)).toBe(false)
+  })
+
+  test('isModel', () => {
+    expect(isModel(userCollection)).toBe(false)
+    expect(isModel(UserModel)).toBe(true)
+    expect(isCollectionOrModel(Function.prototype)).toBe(false)
+    expect(isCollectionOrModel(undefined)).toBe(false)
+  })
+
+  test('getCollectionName', () => {
+    expect(getCollection(userCollection).collectionName).toBe('users')
+    expect(getCollection(UserModel).collectionName).toBe('users')
+  })
+
+  test('data source', async () => {
+    const users = new Users(UserModel)
+    users.initialize()
+    const user = await users.findOneById(alice._id)
+    expect(user.name).toBe('Alice')
+  })
+
+  test('collection', async () => {
+    const users = new Users(userCollection)
+    users.initialize()
+    const user = await users.findOneById(alice._id)
+    expect(user.name).toBe('Alice')
   })
 })

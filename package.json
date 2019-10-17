@@ -1,6 +1,6 @@
 {
   "name": "apollo-datasource-mongodb",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Apollo data source for MongoDB",
   "main": "dist/index.js",
   "scripts": {
@@ -27,6 +27,8 @@
     "babel-jest": "^24.7.1",
     "graphql": "^14.2.1",
     "jest": "^24.7.1",
+    "mongodb": "^3.3.2",
+    "mongoose": "^5.7.4",
     "prettier": "^1.16.4",
     "waait": "^1.0.4"
   },

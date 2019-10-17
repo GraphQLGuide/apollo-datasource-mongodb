@@ -20,7 +20,6 @@ This package uses [DataLoader](https://github.com/graphql/dataloader) for batchi
   - [Basic](#basic)
   - [Batching](#batching)
   - [Caching](#caching)
-  - [Mongoose](#mongoose)
 - [API](#api)
   - [findOneById](#findonebyid)
   - [findManyByIds](#findmanybyids)
@@ -33,7 +32,7 @@ This package uses [DataLoader](https://github.com/graphql/dataloader) for batchi
 
 ### Basic
 
-The basic setup is subclassing `MongoDataSource`, passing your collection to the constructor, and using the [API methods](#API):
+The basic setup is subclassing `MongoDataSource`, passing your collection or Mongoose model to the constructor, and using the [API methods](#API):
 
 ```js
 import { MongoDataSource } from 'apollo-datasource-mongodb'
@@ -50,18 +49,18 @@ and:
 ```js
 import Users from './data-sources/Users.js'
 
-const users = db.collection('users')
-
 const server = new ApolloServer({
   typeDefs,
   resolvers,
   dataSources: () => ({
-    db: new Users({ users })
+    users: new Users(db.collection('users'))
+    // OR
+    // users: new Users(UserModel)
   })
 })
 ```
 
-The collection is available at `this.users` (e.g. `this.users.update({_id: 'foo, { $set: { name: 'me' }}})`). The request's context is available at `this.context`. For example, if you put the logged-in user's ID on context as `context.currentUserId`:
+Inside the data source, the collection is available at `this.collection` (e.g. `this.collection.update({_id: 'foo, { $set: { name: 'me' }}})`). The model (if applicable) is available at `this.model` (`new this.model({ name: 'Alice' })`). The request's context is available at `this.context`. For example, if you put the logged-in user's ID on context as `context.currentUserId`:
 
 ```js
 class Users extends MongoDataSource {
@@ -86,26 +85,6 @@ class Users extends MongoDataSource {
     ...
   }
 }
-```
-
-### Mongoose
-
-You can use mongoose the same way as with the native mongodb client
-
-```js
-import mongoose from 'mongoose'
-import Users from './data-sources/Users.js'
-
-const userSchema = new mongoose.Schema({ name: 'string'});
-const UsersModel = mongoose.model('users', userSchema);
-
-const server = new ApolloServer({
-  typeDefs,
-  resolvers,
-  dataSources: () => ({
-    db: new Users({ users: UsersModel })
-  })
-})
 ```
 
 ### Batching
@@ -134,15 +113,12 @@ const resolvers = {
   }
 }
 
-const users = db.collection('users')
-const posts = db.collection('posts')
-
 const server = new ApolloServer({
   typeDefs,
   resolvers,
   dataSources: () => ({
-    users: new Users({ users }),
-    posts: new Posts({ posts })
+    users: new Users(db.collection('users')),
+    posts: new Posts(db.collection('posts'))
   })
 })
 ```
@@ -161,7 +137,7 @@ class Users extends MongoDataSource {
 
   updateUserName(userId, newName) {
     this.deleteFromCacheById(userId)
-    return this.users.updateOne({ 
+    return this.collection.updateOne({ 
       _id: userId 
     }, {
       $set: { name: newName }

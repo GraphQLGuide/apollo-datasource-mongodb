@@ -1,6 +1,9 @@
 import DataLoader from 'dataloader'
 
-const remapDocs = (docs, ids) => {
+import { getCollection } from './helpers'
+
+// https://github.com/graphql/dataloader#batch-function
+const orderDocs = ids => docs => {
   const idMap = {}
   docs.forEach(doc => {
     idMap[doc._id] = doc
@@ -9,21 +12,14 @@ const remapDocs = (docs, ids) => {
 }
 
 export const createCachingMethods = ({ collection, cache }) => {
-  const isMongoose = typeof collection === 'function'
-
   const loader = new DataLoader(ids =>
-    isMongoose
-      ? collection
-          .find({ _id: { $in: ids } })
-          .lean()
-          .then(docs => remapDocs(docs, ids))
-      : collection
-          .find({ _id: { $in: ids } })
-          .toArray()
-          .then(docs => remapDocs(docs, ids))
+    collection
+      .find({ _id: { $in: ids } })
+      .toArray()
+      .then(orderDocs(ids))
   )
 
-  const cachePrefix = `mongo-${collection.collectionName}-`
+  const cachePrefix = `mongo-${getCollection(collection).collectionName}-`
 
   const methods = {
     findOneById: async (id, { ttl } = {}) => {

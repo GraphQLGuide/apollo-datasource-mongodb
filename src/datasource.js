@@ -3,33 +3,35 @@ import { ApolloError } from 'apollo-server-errors'
 import { InMemoryLRUCache } from 'apollo-server-caching'
 
 import { createCachingMethods } from './cache'
+import { isCollectionOrModel, isModel } from './helpers'
 
 class MongoDataSource extends DataSource {
   constructor(collection) {
     super()
 
-    const setUpCorrectly =
-      typeof collection === 'object' && Object.keys(collection).length === 1
-    if (!setUpCorrectly) {
+    if (!isCollectionOrModel(collection)) {
       throw new ApolloError(
-        'MongoDataSource constructor must be given an object with a single collection'
+        'MongoDataSource constructor must be given a collection or Mongoose model'
       )
     }
 
-    this.collectionName = Object.keys(collection)[0]
-    this[this.collectionName] = collection[this.collectionName]
+    if (isModel(collection)) {
+      this.model = collection
+      this.collection = this.model.collection
+    } else {
+      this.collection = collection
+    }
   }
 
   // https://github.com/apollographql/apollo-server/blob/master/packages/apollo-datasource/src/index.ts
-  initialize(config) {
-    this.context = config.context
-
-    const cache = config.cache || new InMemoryLRUCache()
+  initialize({ context, cache } = {}) {
+    this.context = context
 
     const methods = createCachingMethods({
-      collection: this[this.collectionName],
-      cache
+      collection: this.collection,
+      cache: cache || new InMemoryLRUCache()
     })
+
     Object.assign(this, methods)
   }
 }
