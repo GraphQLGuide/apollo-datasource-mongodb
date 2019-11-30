@@ -52,7 +52,7 @@ describe('Mongoose', () => {
     alice = await UserModel.findOneAndUpdate(
       { name: 'Alice' },
       { name: 'Alice' },
-      { upsert: true }
+      { upsert: true, new: true }
     )
   })
 
