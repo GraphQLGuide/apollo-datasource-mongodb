@@ -27,13 +27,13 @@ export const createCachingMethods = ({ collection, cache }) => {
 
       const cacheDoc = await cache.get(key)
       if (cacheDoc) {
-        return cacheDoc
+        return JSON.parse(cacheDoc)
       }
 
       const doc = await loader.load(id)
       if (Number.isInteger(ttl)) {
         // https://github.com/apollographql/apollo-server/tree/master/packages/apollo-server-caching#apollo-server-caching
-        cache.set(key, doc, { ttl })
+        cache.set(key, JSON.stringify(doc), { ttl })
       }
 
       return doc
