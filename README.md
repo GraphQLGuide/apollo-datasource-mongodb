@@ -6,7 +6,7 @@ Apollo [data source](https://www.apollographql.com/docs/apollo-server/features/d
 npm i apollo-datasource-mongodb
 ```
 
-This package uses [DataLoader](https://github.com/graphql/dataloader) for batching and per-request memoization caching. It also optionally (if you provide a `ttl`), does shared application-level caching (using either the default Apollo `InMemoryLRUCache` or the [cache you provide to ApolloServer()](https://www.apollographql.com/docs/apollo-server/features/data-sources#using-memcachedredis-as-a-cache-storage-backend)). It does this only for these two methods:
+This package uses [DataLoader](https://github.com/graphql/dataloader) for batching and per-request memoization caching. It also optionally (if you provide a `ttl`) does shared application-level caching (using either the default Apollo `InMemoryLRUCache` or the [cache you provide to ApolloServer()](https://www.apollographql.com/docs/apollo-server/features/data-sources#using-memcachedredis-as-a-cache-storage-backend)). It does this only for these two methods:
 
 - [`findOneById(id, options)`](#findonebyid)
 - [`findManyByIds(ids, options)`](#findmanybyids)
