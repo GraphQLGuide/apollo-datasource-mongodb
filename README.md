@@ -34,6 +34,8 @@ This package uses [DataLoader](https://github.com/graphql/dataloader) for batchi
 
 The basic setup is subclassing `MongoDataSource`, passing your collection or Mongoose model to the constructor, and using the [API methods](#API):
 
+`data-sources/Users.js`
+
 ```js
 import { MongoDataSource } from 'apollo-datasource-mongodb'
 
@@ -47,7 +49,12 @@ export default class Users extends MongoDataSource {
 and:
 
 ```js
+import { MongoClient } from 'mongodb'
+
 import Users from './data-sources/Users.js'
+
+const client = new MongoClient('mongodb://localhost:27017/test')
+const db = client.db()
 
 const server = new ApolloServer({
   typeDefs,
