@@ -78,7 +78,7 @@ describe('createCachingMethods', () => {
   it(`caches`, async () => {
     await api.findOneById('id1', { ttl: 1 })
     const value = await cache.get(cacheKey('id1'))
-    expect(value).toBe(docs.id1)
+    expect(JSON.parse(value)).toEqual(docs.id1)
 
     await api.findOneById('id1')
     expect(collection.find.mock.calls.length).toBe(1)
@@ -96,7 +96,7 @@ describe('createCachingMethods', () => {
     await api.findOneById('id1', { ttl: 1 })
 
     const valueBefore = await cache.get(cacheKey('id1'))
-    expect(valueBefore).toBe(docs.id1)
+    expect(JSON.parse(valueBefore)).toEqual(docs.id1)
 
     await api.deleteFromCacheById('id1')
 
