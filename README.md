@@ -54,13 +54,13 @@ import { MongoClient } from 'mongodb'
 import Users from './data-sources/Users.js'
 
 const client = new MongoClient('mongodb://localhost:27017/test')
-const db = client.db()
+client.connect()
 
 const server = new ApolloServer({
   typeDefs,
   resolvers,
   dataSources: () => ({
-    users: new Users(db.collection('users'))
+    users: new Users(client.db().collection('users'))
     // OR
     // users: new Users(UserModel)
   })
