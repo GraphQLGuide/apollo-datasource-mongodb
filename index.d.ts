@@ -24,6 +24,7 @@ declare module 'apollo-datasource-mongodb' {
   export class MongoDataSource<TData, TContext = any> extends DataSource<
     TContext
   > {
+    protected context: TContext
     protected collection: Collection<TData>
     protected model: Model<TData>
 
