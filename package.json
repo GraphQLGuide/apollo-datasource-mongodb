@@ -16,6 +16,8 @@
     "node": ">=8"
   },
   "dependencies": {
+    "@types/mongodb": "^3.3.2",
+    "@types/mongoose": "^5.7.4",
     "apollo-datasource": "^0.3.1",
     "apollo-server-caching": "^0.3.1",
     "apollo-server-errors": "^2.2.1",
@@ -25,8 +27,6 @@
     "@babel/cli": "^7.4.3",
     "@babel/core": "^7.4.3",
     "@babel/preset-env": "^7.4.3",
-    "@types/mongodb": "^3.5.3",
-    "@types/mongoose": "^5.7.7",
     "babel-jest": "^24.7.1",
     "graphql": "^14.2.1",
     "jest": "^24.7.1",
@@ -53,6 +53,7 @@
     "mongo"
   ],
   "files": [
-    "/dist"
+    "/dist",
+    "index.d.ts"
   ]
 }
