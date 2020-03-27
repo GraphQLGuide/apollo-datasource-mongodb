@@ -53,6 +53,7 @@
     "mongo"
   ],
   "files": [
-    "/dist"
+    "/dist",
+    "index.d.ts"
   ]
 }
