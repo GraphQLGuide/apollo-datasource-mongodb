@@ -113,10 +113,10 @@ class Posts extends MongoDataSource {
 
 const resolvers = {
   Post: {
-    author: (post, _, { users }) => users.getUser(post.authorId)
+    author: (post, _, { dataSources: { users } }) => users.getUser(post.authorId)
   },
   User: {
-    posts: (user, _, { posts }) => posts.getPosts(user.postIds)
+    posts: (user, _, { dataSources: { posts } }) => posts.getPosts(user.postIds)
   }
 }
 
