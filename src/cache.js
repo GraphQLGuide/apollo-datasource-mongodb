@@ -41,7 +41,10 @@ export const createCachingMethods = ({ collection, cache }) => {
     findManyByIds: (ids, { ttl } = {}) => {
       return Promise.all(ids.map(id => methods.findOneById(id, { ttl })))
     },
-    deleteFromCacheById: id => cache.delete(cachePrefix + id)
+    deleteFromCacheById: async id => {
+      loader.clear(id)
+      await cache.delete(cachePrefix + id)
+    }
   }
 
   return methods
