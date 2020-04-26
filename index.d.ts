@@ -40,6 +40,6 @@ declare module 'apollo-datasource-mongodb' {
       options?: Options
     ): Promise<(TData | null | undefined)[]>
 
-    deleteFromCacheById(id: ObjectId): void
+    deleteFromCacheById(id: ObjectId): Promise<void>
   }
 }
