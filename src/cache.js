@@ -11,13 +11,17 @@ const orderDocs = ids => docs => {
   return ids.map(id => idMap[id])
 }
 
-export const createCachingMethods = ({ collection, cache }) => {
-  const loader = new DataLoader(ids =>
-    collection
-      .find({ _id: { $in: ids } })
-      .toArray()
-      .then(orderDocs(ids))
-  )
+export const createCachingMethods = ({ collection, model, cache }) => {
+  const loader = model
+    ? new DataLoader(ids =>
+        model.find({ _id: { $in: ids } }).then(orderDocs(ids))
+      )
+    : new DataLoader(ids =>
+        collection
+          .find({ _id: { $in: ids } })
+          .toArray()
+          .then(orderDocs(ids))
+      )
 
   const cachePrefix = `mongo-${getCollection(collection).collectionName}-`
 
