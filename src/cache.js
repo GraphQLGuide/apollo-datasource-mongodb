@@ -14,7 +14,10 @@ const orderDocs = ids => docs => {
 export const createCachingMethods = ({ collection, model, cache }) => {
   const loader = model
     ? new DataLoader(ids =>
-        model.find({ _id: { $in: ids } }).then(orderDocs(ids))
+        model
+          .find({ _id: { $in: ids } })
+          .exec()
+          .then(orderDocs(ids))
       )
     : new DataLoader(ids =>
         collection
