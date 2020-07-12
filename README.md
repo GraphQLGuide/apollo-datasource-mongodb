@@ -20,6 +20,7 @@ This package uses [DataLoader](https://github.com/graphql/dataloader) for batchi
   - [Basic](#basic)
   - [Batching](#batching)
   - [Caching](#caching)
+  - [TypeScript](#typescript)
 - [API](#api)
   - [findOneById](#findonebyid)
   - [findManyByIds](#findmanybyids)
@@ -164,6 +165,58 @@ const resolvers = {
 ```
 
 Here we also call [`deleteFromCacheById()`](#deletefromcachebyid) to remove the user from the cache when the user's data changes. If we're okay with people receiving out-of-date data for the duration of our `ttl`—in this case, for as long as a minute—then we don't need to bother adding calls to `deleteFromCacheById()`.
+
+### TypeScript
+
+Since we are using a typed language, we want the provided methods to be correctly typed as well. This requires us to make the `MongoDataSource` class polymorphic. It requires 1-2 template arguments. The first argument is the type of the document in our collection. The second argument is the type of context in our GraphQL server, which defaults to `any`. For example:
+
+`data-sources/Users.ts`
+
+```ts
+import { MongoDataSource } from 'apollo-datasource-mongodb'
+import { ObjectId } from 'mongodb'
+
+interface UserDocument {
+  _id: ObjectId
+  username: string
+  password: string
+  email: string
+}
+
+// This is optional
+interface Context {
+  loggedInUser: UserDocument
+}
+
+export default class Users extends MongoDataSource<UserDocument, Context> {
+  getUser(userId) {
+    // this.context has type `Context` as defined above
+    // this.findOneById has type `(id: ObjectId) => Promise<UserDocument | null | undefined>`
+    return this.findOneById(userId)
+  }
+}
+```
+
+and:
+
+```ts
+import { MongoClient } from 'mongodb'
+
+import Users from './data-sources/Users.ts'
+
+const client = new MongoClient('mongodb://localhost:27017/test')
+client.connect()
+
+const server = new ApolloServer({
+  typeDefs,
+  resolvers,
+  dataSources: () => ({
+    users: new Users(client.db().collection('users'))
+    // OR
+    // users: new Users(UserModel)
+  })
+})
+```
 
 ## API
 
