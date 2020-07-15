@@ -11,24 +11,19 @@ const orderDocs = ids => docs => {
   return ids.map(id => idMap[id])
 }
 
-export const createCachingMethods = ({ collection, cache }) => {
-  const loader = new DataLoader((ids) => {
-    const res = collection.find({
+export const createCachingMethods = ({ collection, model, cache }) => {
+  const loader = new DataLoader(ids => {
+    const filter = {
       _id: {
-        $in: ids,
-      },
-    });
-
-    let promise;
-
-    if (isModel(collection)) {
-      promise = res.exec();
-    } else {
-      promise = res.toArray();
+        $in: ids
+      }
     }
+    const promise = model
+      ? model.find(filter).exec()
+      : collection.find(filter).toArray()
 
-    return promise.then(orderDocs(ids));
-  });
+    return promise.then(orderDocs(ids))
+  })
 
   const cachePrefix = `mongo-${getCollection(collection).collectionName}-`
 

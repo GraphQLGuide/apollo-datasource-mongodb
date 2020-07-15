@@ -95,6 +95,8 @@ class Users extends MongoDataSource {
 }
 ```
 
+If you're passing a Mongoose model rather than a collection, Mongoose will be used for data fetching. All transformations definded on that model (virtuals, plugins, etc.) will be applied to your data before caching, just like you would expect it. If you're using reference fields, you might be interested in checking out [mongoose-autopopulate](https://www.npmjs.com/package/mongoose-autopopulate).
+
 ### Batching
 
 This is the main feature, and is always enabled. Here's a full example:
@@ -145,8 +147,8 @@ class Users extends MongoDataSource {
 
   updateUserName(userId, newName) {
     this.deleteFromCacheById(userId)
-    return this.collection.updateOne({ 
-      _id: userId 
+    return this.collection.updateOne({
+      _id: userId
     }, {
       $set: { name: newName }
     })
@@ -158,7 +160,7 @@ const resolvers = {
     author: (post, _, { users }) => users.getUser(post.authorId)
   },
   Mutation: {
-    changeName: (_, { userId, newName }, { users, currentUserId }) => 
+    changeName: (_, { userId, newName }, { users, currentUserId }) =>
       currentUserId === userId && users.updateUserName(userId, newName)
   }
 }
