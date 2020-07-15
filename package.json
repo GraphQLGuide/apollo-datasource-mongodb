@@ -16,24 +16,24 @@
     "node": ">=8"
   },
   "dependencies": {
-    "@types/mongodb": "^3.3.2",
-    "@types/mongoose": "^5.7.4",
+    "@types/mongodb": "^3.5.25",
+    "@types/mongoose": "^5.7.28",
     "apollo-datasource": "^0.3.1",
     "apollo-server-caching": "^0.3.1",
-    "apollo-server-errors": "^2.2.1",
+    "apollo-server-errors": "^2.4.1",
     "dataloader": "^1.4.0"
   },
   "devDependencies": {
-    "@babel/cli": "^7.4.3",
-    "@babel/core": "^7.4.3",
-    "@babel/preset-env": "^7.4.3",
-    "babel-jest": "^24.7.1",
-    "graphql": "^14.2.1",
-    "jest": "^24.7.1",
-    "mongodb": "^3.3.2",
-    "mongoose": "^5.7.4",
-    "prettier": "^1.16.4",
-    "waait": "^1.0.4"
+    "@babel/cli": "^7.10.3",
+    "@babel/core": "^7.10.3",
+    "@babel/preset-env": "^7.10.3",
+    "babel-jest": "^24.9.0",
+    "graphql": "^14.6.0",
+    "jest": "^24.9.0",
+    "mongodb": "^3.5.9",
+    "mongoose": "^5.9.20",
+    "prettier": "^1.19.1",
+    "waait": "^1.0.5"
   },
   "homepage": "https://github.com/GraphQLGuide/apollo-datasource-mongodb",
   "repository": {
