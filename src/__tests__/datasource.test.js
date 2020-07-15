@@ -75,17 +75,19 @@ describe('Mongoose', () => {
     expect(getCollection(UserModel).collectionName).toBe('users')
   })
 
-  test('data source', async () => {
+  test('Data Source with Model', async () => {
     const users = new Users(UserModel)
     users.initialize()
     const user = await users.findOneById(alice._id)
     expect(user.name).toBe('Alice')
+    expect(user.id).toBe(alice._id.toString())
   })
 
-  test('collection', async () => {
+  test('Data Source with Collection', async () => {
     const users = new Users(userCollection)
     users.initialize()
     const user = await users.findOneById(alice._id)
     expect(user.name).toBe('Alice')
+    expect(user.id).toBeUndefined()
   })
 })

@@ -1,6 +1,6 @@
 import DataLoader from 'dataloader'
 
-import { getCollection } from './helpers'
+import { getCollection, isModel } from './helpers'
 
 // https://github.com/graphql/dataloader#batch-function
 const orderDocs = ids => docs => {
@@ -12,12 +12,23 @@ const orderDocs = ids => docs => {
 }
 
 export const createCachingMethods = ({ collection, cache }) => {
-  const loader = new DataLoader(ids =>
-    collection
-      .find({ _id: { $in: ids } })
-      .toArray()
-      .then(orderDocs(ids))
-  )
+  const loader = new DataLoader((ids) => {
+    const res = collection.find({
+      _id: {
+        $in: ids,
+      },
+    });
+
+    let promise;
+
+    if (isModel(collection)) {
+      promise = res.exec();
+    } else {
+      promise = res.toArray();
+    }
+
+    return promise.then(orderDocs(ids));
+  });
 
   const cachePrefix = `mongo-${getCollection(collection).collectionName}-`
 
