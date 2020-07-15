@@ -1,6 +1,6 @@
 {
   "name": "apollo-datasource-mongodb",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "Apollo data source for MongoDB",
   "main": "dist/index.js",
   "types": "index.d.ts",
@@ -33,6 +33,7 @@
     "mongodb": "^3.5.9",
     "mongoose": "^5.9.20",
     "prettier": "^1.19.1",
+    "release": "^6.1.0",
     "waait": "^1.0.5"
   },
   "homepage": "https://github.com/GraphQLGuide/apollo-datasource-mongodb",
