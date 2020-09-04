@@ -49,8 +49,9 @@ export const createCachingMethods = ({ collection, model, cache }) => {
       return Promise.all(ids.map(id => methods.findOneById(id, { ttl })))
     },
     deleteFromCacheById: async id => {
-      loader.clear(id)
-      await cache.delete(cachePrefix + id)
+      const _id = id instanceof ObjectId ? id.toHexString() : id
+      loader.clear(_id)
+      await cache.delete(cachePrefix + _id)
     }
   }
 
