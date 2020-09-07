@@ -1,14 +1,18 @@
 import DataLoader from 'dataloader'
+import { ObjectId } from 'mongodb'
+import { EJSON } from 'bson'
 
-import { getCollection, isModel } from './helpers'
-import { ObjectId } from 'bson'
+import { getCollection } from './helpers'
+
+export const idToString = id => (id instanceof ObjectId ? id.toHexString() : id)
+
 // https://github.com/graphql/dataloader#batch-function
 const orderDocs = ids => docs => {
   const idMap = {}
   docs.forEach(doc => {
-    idMap[doc._id] = doc
+    idMap[idToString(doc._id)] = doc
   })
-  return ids.map(id => idMap[id])
+  return ids.map(id => idMap[idToString(id)])
 }
 
 export const createCachingMethods = ({ collection, model, cache }) => {
@@ -29,18 +33,17 @@ export const createCachingMethods = ({ collection, model, cache }) => {
 
   const methods = {
     findOneById: async (id, { ttl } = {}) => {
-      const _id = id instanceof ObjectId ? id.toHexString() : id
-      const key = cachePrefix + _id
+      const key = cachePrefix + idToString(id)
 
       const cacheDoc = await cache.get(key)
       if (cacheDoc) {
-        return JSON.parse(cacheDoc)
+        return EJSON.parse(cacheDoc)
       }
 
-      const doc = await loader.load(_id)
+      const doc = await loader.load(id)
       if (Number.isInteger(ttl)) {
         // https://github.com/apollographql/apollo-server/tree/master/packages/apollo-server-caching#apollo-server-caching
-        cache.set(key, JSON.stringify(doc), { ttl })
+        cache.set(key, EJSON.stringify(doc), { ttl })
       }
 
       return doc
@@ -49,9 +52,9 @@ export const createCachingMethods = ({ collection, model, cache }) => {
       return Promise.all(ids.map(id => methods.findOneById(id, { ttl })))
     },
     deleteFromCacheById: async id => {
-      const _id = id instanceof ObjectId ? id.toHexString() : id
-      loader.clear(_id)
-      await cache.delete(cachePrefix + _id)
+      const stringId = idToString(id)
+      loader.clear(stringId)
+      await cache.delete(cachePrefix + stringId)
     }
   }
 

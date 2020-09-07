@@ -21,6 +21,7 @@
     "apollo-datasource": "^0.3.1",
     "apollo-server-caching": "^0.3.1",
     "apollo-server-errors": "^2.4.1",
+    "bson": "^4.1.0",
     "dataloader": "^1.4.0"
   },
   "devDependencies": {

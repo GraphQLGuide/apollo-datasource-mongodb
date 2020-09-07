@@ -31,15 +31,15 @@ declare module 'apollo-datasource-mongodb' {
     constructor(modelOrCollection: ModelOrCollection<TData>)
 
     findOneById(
-      id: ObjectId,
+      id: ObjectId | string,
       options?: Options
     ): Promise<TData | null | undefined>
 
     findManyByIds(
-      ids: ObjectId[],
+      ids: (ObjectId | string)[],
       options?: Options
     ): Promise<(TData | null | undefined)[]>
 
-    deleteFromCacheById(id: ObjectId): Promise<void>
+    deleteFromCacheById(id: ObjectId | string): Promise<void>
   }
 }
