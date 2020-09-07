@@ -226,7 +226,7 @@ const server = new ApolloServer({
 
 `this.findOneById(id, { ttl })`
 
-Resolves to the found document. Uses DataLoader to load `id`. DataLoader uses `collection.find({ _id: { $in: ids } })`. Optionally caches the document if `ttl` is set (in whole seconds).
+Resolves to the found document. Uses DataLoader to load `id`. DataLoader uses `collection.find({ _id: { $in: ids } })`. Optionally caches the document if `ttl` is set (in whole positive seconds).
 
 ### findManyByIds
 
