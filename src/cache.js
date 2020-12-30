@@ -5,6 +5,7 @@ import { EJSON } from 'bson'
 import { getCollection } from './helpers'
 
 export const idToString = id => (id instanceof ObjectId ? id.toHexString() : id)
+const stringToId = str => str instanceof ObjectId ? str : new ObjectId(str)
 
 // https://github.com/graphql/dataloader#batch-function
 const orderDocs = ids => docs => {
@@ -19,7 +20,7 @@ export const createCachingMethods = ({ collection, model, cache }) => {
   const loader = new DataLoader(ids => {
     const filter = {
       _id: {
-        $in: ids
+        $in: ids.map(stringToId)
       }
     }
     const promise = model
@@ -40,7 +41,7 @@ export const createCachingMethods = ({ collection, model, cache }) => {
         return EJSON.parse(cacheDoc)
       }
 
-      const doc = await loader.load(id)
+      const doc = await loader.load(idToString(id))
       if (Number.isInteger(ttl)) {
         // https://github.com/apollographql/apollo-server/tree/master/packages/apollo-server-caching#apollo-server-caching
         cache.set(key, EJSON.stringify(doc), { ttl })
