@@ -119,15 +119,18 @@ describe('createCachingMethods', () => {
     }
   })
 
-  it('deletes from data loader cache', async () => {
+  it('deletes from DataLoader cache', async () => {
     for (const id of [docs.id1._id, docs.id2._id]) {
       await api.findOneById(id)
       expect(collection.find).toHaveBeenCalled()
       collection.find.mockClear()
 
+      await api.findOneById(id)
+      expect(collection.find).not.toHaveBeenCalled()
+
       await api.deleteFromCacheById(id)
       await api.findOneById(id)
       expect(collection.find).toHaveBeenCalled()
     }
-  });
+  })
 })
