@@ -99,14 +99,16 @@ describe('createCachingMethods', () => {
   })
 
   it(`deletes from cache`, async () => {
-    await api.findOneById(docs.id1._id, { ttl: 1 })
+    for (const doc of [docs.id1, docs.id2]) {
+      await api.findOneById(doc._id, { ttl: 1 })
 
-    const valueBefore = await cache.get(cacheKey(docs.id1._id))
-    expect(valueBefore).toEqual(EJSON.stringify(docs.id1))
+      const valueBefore = await cache.get(cacheKey(doc._id))
+      expect(valueBefore).toEqual(EJSON.stringify(doc))
 
-    await api.deleteFromCacheById(docs.id1._id)
+      await api.deleteFromCacheById(doc._id)
 
-    const valueAfter = await cache.get(cacheKey(docs.id1._id))
-    expect(valueAfter).toBeUndefined()
+      const valueAfter = await cache.get(cacheKey(doc._id))
+      expect(valueAfter).toBeUndefined()
+    }
   })
 })
