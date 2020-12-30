@@ -7,8 +7,7 @@ import { createCachingMethods, idToString } from '../cache'
 
 const docs = {
   id1: {
-    _id: 'id1'
-    // _id: ObjectId()
+    _id: 'aaaa0000bbbb0000cccc0000'
   },
   id2: {
     _id: ObjectId()
@@ -32,7 +31,15 @@ describe('createCachingMethods', () => {
             setTimeout(
               () =>
                 resolve(
-                  ids.map(id => (id === docs.id1._id ? docs.id1 : docs.id2))
+                  ids.map(id => {
+                    if (id.equals(new ObjectId(docs.id1._id))) {
+                      return docs.id1
+                    }
+
+                    if (id.equals(docs.id2._id)) {
+                      return docs.id2
+                    }
+                  })
                 ),
               0
             )
@@ -111,4 +118,16 @@ describe('createCachingMethods', () => {
       expect(valueAfter).toBeUndefined()
     }
   })
+
+  it('deletes from data loader cache', async () => {
+    for (const id of [docs.id1._id, docs.id2._id]) {
+      await api.findOneById(id)
+      expect(collection.find).toHaveBeenCalled()
+      collection.find.mockClear()
+
+      await api.deleteFromCacheById(id)
+      await api.findOneById(id)
+      expect(collection.find).toHaveBeenCalled()
+    }
+  });
 })
