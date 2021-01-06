@@ -5,7 +5,17 @@ import { EJSON } from 'bson'
 import { getCollection } from './helpers'
 
 export const idToString = id => (id instanceof ObjectId ? id.toHexString() : id)
-const stringToId = str => str instanceof ObjectId ? str : new ObjectId(str)
+const stringToId = str => {
+  if (str instanceof ObjectId) {
+    return str
+  }
+
+  if (ObjectId.isValid(str)) {
+    return new ObjectId(str)
+  }
+
+  return str
+}
 
 // https://github.com/graphql/dataloader#batch-function
 const orderDocs = ids => docs => {

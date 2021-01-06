@@ -135,7 +135,7 @@ const server = new ApolloServer({
 
 ### Caching
 
-To enable shared application-level caching, you do everything from the above section, and you add the `ttl` option to `findOneById()`:
+To enable shared application-level caching, you do everything from the above section, and you add the `ttl` (in seconds) option to `findOneById()`:
 
 ```js
 const MINUTE = 60
@@ -221,6 +221,8 @@ const server = new ApolloServer({
 ```
 
 ## API
+
+The type of the `id` argument must match the type used in the database. We currently support ObjectId and string types.
 
 ### findOneById
 

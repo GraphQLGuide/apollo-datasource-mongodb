@@ -5,13 +5,19 @@ import { EJSON } from 'bson'
 
 import { createCachingMethods, idToString } from '../cache'
 
+const hexId = 'aaaa0000bbbb0000cccc0000'
+
 const docs = {
-  id1: {
-    _id: 'aaaa0000bbbb0000cccc0000'
+  one: {
+    _id: ObjectId(hexId)
   },
-  id2: {
+  two: {
     _id: ObjectId()
   }
+}
+
+const stringDoc = {
+  _id: 's2QBCnv6fXv5YbjAP'
 }
 
 const collectionName = 'test'
@@ -32,12 +38,16 @@ describe('createCachingMethods', () => {
               () =>
                 resolve(
                   ids.map(id => {
-                    if (id.equals(new ObjectId(docs.id1._id))) {
-                      return docs.id1
+                    if (id === stringDoc._id) {
+                      return stringDoc
                     }
 
-                    if (id.equals(docs.id2._id)) {
-                      return docs.id2
+                    if (id.equals(docs.one._id)) {
+                      return docs.one
+                    }
+
+                    if (id.equals(docs.two._id)) {
+                      return docs.two
                     }
                   })
                 ),
@@ -59,16 +69,22 @@ describe('createCachingMethods', () => {
   })
 
   it('finds one', async () => {
-    const doc = await api.findOneById(docs.id1._id)
-    expect(doc).toBe(docs.id1)
+    const doc = await api.findOneById(docs.one._id)
+    expect(doc).toBe(docs.one)
+    expect(collection.find.mock.calls.length).toBe(1)
+  })
+
+  it('finds one with string id', async () => {
+    const doc = await api.findOneById(stringDoc._id)
+    expect(doc).toBe(stringDoc)
     expect(collection.find.mock.calls.length).toBe(1)
   })
 
   it('finds two with batching', async () => {
-    const foundDocs = await api.findManyByIds([docs.id1._id, docs.id2._id])
+    const foundDocs = await api.findManyByIds([docs.one._id, docs.two._id])
 
-    expect(foundDocs[0]).toBe(docs.id1)
-    expect(foundDocs[1]).toBe(docs.id2)
+    expect(foundDocs[0]).toBe(docs.one)
+    expect(foundDocs[1]).toBe(docs.two)
 
     expect(collection.find.mock.calls.length).toBe(1)
   })
@@ -82,31 +98,31 @@ describe('createCachingMethods', () => {
   // })
 
   it(`doesn't cache without ttl`, async () => {
-    await api.findOneById(docs.id1._id)
+    await api.findOneById(docs.one._id)
 
-    const value = await cache.get(cacheKey(docs.id1._id))
+    const value = await cache.get(cacheKey(docs.one._id))
     expect(value).toBeUndefined()
   })
 
   it(`caches`, async () => {
-    await api.findOneById(docs.id1._id, { ttl: 1 })
-    const value = await cache.get(cacheKey(docs.id1._id))
-    expect(value).toEqual(EJSON.stringify(docs.id1))
+    await api.findOneById(docs.one._id, { ttl: 1 })
+    const value = await cache.get(cacheKey(docs.one._id))
+    expect(value).toEqual(EJSON.stringify(docs.one))
 
-    await api.findOneById(docs.id1._id)
+    await api.findOneById(docs.one._id)
     expect(collection.find.mock.calls.length).toBe(1)
   })
 
   it(`caches with ttl`, async () => {
-    await api.findOneById(docs.id1._id, { ttl: 1 })
+    await api.findOneById(docs.one._id, { ttl: 1 })
     await wait(1001)
 
-    const value = await cache.get(cacheKey(docs.id1._id))
+    const value = await cache.get(cacheKey(docs.one._id))
     expect(value).toBeUndefined()
   })
 
   it(`deletes from cache`, async () => {
-    for (const doc of [docs.id1, docs.id2]) {
+    for (const doc of [docs.one, docs.two, stringDoc]) {
       await api.findOneById(doc._id, { ttl: 1 })
 
       const valueBefore = await cache.get(cacheKey(doc._id))
@@ -120,7 +136,7 @@ describe('createCachingMethods', () => {
   })
 
   it('deletes from DataLoader cache', async () => {
-    for (const id of [docs.id1._id, docs.id2._id]) {
+    for (const id of [docs.one._id, docs.two._id, stringDoc._id]) {
       await api.findOneById(id)
       expect(collection.find).toHaveBeenCalled()
       collection.find.mockClear()
