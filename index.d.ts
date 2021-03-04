@@ -16,6 +16,10 @@ declare module 'apollo-datasource-mongodb' {
   export type ModelOrCollection<T> = T extends Document
     ? Model<T>
     : Collection<T>
+  
+  export interface Fields {
+    [fieldName: string]: string | number | boolean | [string | number | boolean]
+  }
 
   export interface Options {
     ttl: number
@@ -37,6 +41,11 @@ declare module 'apollo-datasource-mongodb' {
 
     findManyByIds(
       ids: (ObjectId | string)[],
+      options?: Options
+    ): Promise<(TData | null | undefined)[]>
+
+    findByFields(
+      fields: Fields,
       options?: Options
     ): Promise<(TData | null | undefined)[]>
 
