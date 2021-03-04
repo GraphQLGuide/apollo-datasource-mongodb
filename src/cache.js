@@ -112,7 +112,9 @@ export const createCachingMethods = ({ collection, model, cache }) => {
 
       Object.keys(fields).forEach(key => {
         if (typeof key !== 'undefined') {
-          cleanedFields[key] = fields[key]
+          cleanedFields[key] = Array.isArray(fields[key])
+            ? fields[key]
+            : [fields[key]]
         }
       })
 
