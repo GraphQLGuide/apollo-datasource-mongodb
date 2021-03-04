@@ -16,41 +16,47 @@ const stringToId = str => {
 
   return str
 }
-const fieldToDocField = key => key === 'id' ? '_id' : key
+const fieldToDocField = key => (key === 'id' ? '_id' : key)
 
 // https://github.com/graphql/dataloader#batch-function
 // "The Array of values must be the same length as the Array of keys."
 // "Each index in the Array of values must correspond to the same index in the Array of keys."
-const orderDocs = fieldsArray => docs => fieldsArray.map(fields => 
-  docs.filter(doc => {
-    for (let fieldName of Object.keys(fields)) {
-      const fieldValue = fields[fieldName]
-      if (typeof fieldValue === 'undefined') continue
-      const filterValuesArr = Array.isArray(fieldValue)
-        ? fieldValue.map(val => idToString(val))
-        : [idToString(fieldValue)]
-      const docValue = doc[fieldToDocField(fieldName)]
-      const docValuesArr = Array.isArray(docValue)
-        ? docValue.map(val => idToString(val))
-        : [idToString(docValue)]
-      let isMatch = false
-      for (const filterVal of filterValuesArr) {
-        if (docValuesArr.includes(filterVal)) {
-          isMatch = true
+const orderDocs = fieldsArray => docs =>
+  fieldsArray.map(fields =>
+    docs.filter(doc => {
+      for (let fieldName of Object.keys(fields)) {
+        const fieldValue = fields[fieldName]
+        if (typeof fieldValue === 'undefined') continue
+        const filterValuesArr = Array.isArray(fieldValue)
+          ? fieldValue.map(val => idToString(val))
+          : [idToString(fieldValue)]
+        const docValue = doc[fieldToDocField(fieldName)]
+        const docValuesArr = Array.isArray(docValue)
+          ? docValue.map(val => idToString(val))
+          : [idToString(docValue)]
+        let isMatch = false
+        for (const filterVal of filterValuesArr) {
+          if (docValuesArr.includes(filterVal)) {
+            isMatch = true
+          }
         }
+        if (!isMatch) return false
       }
-      if (!isMatch) return false
-    }
-    return true
-  })
-)
+      return true
+    })
+  )
 
 export const createCachingMethods = ({ collection, model, cache }) => {
   const loader = new DataLoader(JSONArray => {
-    let fieldsArray = JSONArray.map(JSON.parse);
-    const filter = fieldsArray.reduce((filter, fields) => {
-
-      for (const fieldName of Object.keys(fields)) {
+    const fieldsArray = JSONArray.map(JSON.parse)
+    const filterArray = fieldsArray.reduce((filterArray, fields) => {
+      const existingFieldsFilter = filterArray.find(
+        filter =>
+          [...Object.keys(filter)].sort().join() ===
+          [...Object.keys(fields)].sort().join()
+      )
+      const filter = existingFieldsFilter || {}
+      for (const fieldName in fields) {
         if (typeof fields[fieldName] === 'undefined') continue
         const docFieldName = fieldToDocField(fieldName)
         if (!filter[docFieldName]) filter[docFieldName] = { $in: [] }
@@ -63,10 +69,15 @@ export const createCachingMethods = ({ collection, model, cache }) => {
           ...newVals.filter(val => !filter[docFieldName].$in.includes(val))
         ]
       }
-      
-      return filter
-    }, {})
-
+      if (existingFieldsFilter) return filterArray
+      return [...filterArray, filter]
+    }, [])
+    const filter =
+      filterArray.length === 1
+        ? filterArray[0]
+        : {
+            $or: filterArray
+          }
     const promise = model
       ? model.find(filter).exec()
       : collection.find(filter).toArray()
@@ -85,20 +96,19 @@ export const createCachingMethods = ({ collection, model, cache }) => {
         return EJSON.parse(cacheDoc)
       }
 
-      const doc = await loader.load(JSON.stringify({ id: id }))
+      const docs = await loader.load(JSON.stringify({ id: id }))
       if (Number.isInteger(ttl)) {
         // https://github.com/apollographql/apollo-server/tree/master/packages/apollo-server-caching#apollo-server-caching
-        cache.set(key, EJSON.stringify(doc[0]), { ttl })
+        cache.set(key, EJSON.stringify(docs[0]), { ttl })
       }
 
-      return doc[0]
+      return docs[0]
     },
     findManyByIds: (ids, { ttl } = {}) => {
       return Promise.all(ids.map(id => methods.findOneById(id, { ttl })))
     },
     findByFields: async (fields, { ttl } = {}) => {
-
-      const cleanedFields = {};
+      const cleanedFields = {}
 
       Object.keys(fields).forEach(key => {
         if (typeof key !== 'undefined') {
@@ -106,7 +116,7 @@ export const createCachingMethods = ({ collection, model, cache }) => {
         }
       })
 
-      const loaderJSON = JSON.stringify(cleanedFields);
+      const loaderJSON = JSON.stringify(cleanedFields)
 
       const key = cachePrefix + loaderJSON
 
@@ -115,13 +125,30 @@ export const createCachingMethods = ({ collection, model, cache }) => {
         return EJSON.parse(cacheDoc)
       }
 
-      const doc = await loader.load(loaderJSON)
-      if (Number.isInteger(ttl)) {
-        // https://github.com/apollographql/apollo-server/tree/master/packages/apollo-server-caching#apollo-server-caching
-        cache.set(key, EJSON.stringify(doc), { ttl })
+      const fieldNames = Object.keys(cleanedFields)
+      let docs
+
+      if (fieldNames.length === 1) {
+        const field = cleanedFields[fieldNames[0]]
+        const fieldArray = Array.isArray(field) ? field : [field]
+        const docsArray = await Promise.all(
+          fieldArray.map(value => {
+            const filter = {}
+            filter[fieldNames[0]] = value
+            return loader.load(JSON.stringify(filter))
+          })
+        )
+        docs = [].concat(...docsArray)
+      } else {
+        docs = await loader.load(loaderJSON)
       }
 
-      return doc
+      if (Number.isInteger(ttl)) {
+        // https://github.com/apollographql/apollo-server/tree/master/packages/apollo-server-caching#apollo-server-caching
+        cache.set(key, EJSON.stringify(docs), { ttl })
+      }
+
+      return docs
     },
     deleteFromCacheById: async id => {
       loader.clear(JSON.stringify({ id: id }))
