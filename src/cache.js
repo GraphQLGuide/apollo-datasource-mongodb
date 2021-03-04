@@ -16,28 +16,62 @@ const stringToId = str => {
 
   return str
 }
+const fieldToDocField = key => key === 'id' ? '_id' : key
 
 // https://github.com/graphql/dataloader#batch-function
-const orderDocs = ids => docs => {
-  const idMap = {}
-  docs.forEach(doc => {
-    idMap[idToString(doc._id)] = doc
+// "The Array of values must be the same length as the Array of keys."
+// "Each index in the Array of values must correspond to the same index in the Array of keys."
+const orderDocs = fieldsArray => docs => fieldsArray.map(fields => 
+  docs.filter(doc => {
+    for (let fieldName of Object.keys(fields)) {
+      const fieldValue = fields[fieldName]
+      if (typeof fieldValue === 'undefined') continue
+      const filterValuesArr = Array.isArray(fieldValue)
+        ? fieldValue.map(val => idToString(val))
+        : [idToString(fieldValue)]
+      const docValue = doc[fieldToDocField(fieldName)]
+      const docValuesArr = Array.isArray(docValue)
+        ? docValue.map(val => idToString(val))
+        : [idToString(docValue)]
+      let isMatch = false
+      for (const filterVal of filterValuesArr) {
+        if (docValuesArr.includes(filterVal)) {
+          isMatch = true
+        }
+      }
+      if (!isMatch) return false
+    }
+    return true
   })
-  return ids.map(id => idMap[idToString(id)])
-}
+)
 
 export const createCachingMethods = ({ collection, model, cache }) => {
-  const loader = new DataLoader(ids => {
-    const filter = {
-      _id: {
-        $in: ids.map(stringToId)
+  const loader = new DataLoader(JSONArray => {
+    let fieldsArray = JSONArray.map(JSON.parse);
+    const filter = fieldsArray.reduce((filter, fields) => {
+
+      for (const fieldName of Object.keys(fields)) {
+        if (typeof fields[fieldName] === 'undefined') continue
+        const docFieldName = fieldToDocField(fieldName)
+        if (!filter[docFieldName]) filter[docFieldName] = { $in: [] }
+        let newVals = Array.isArray(fields[fieldName])
+          ? fields[fieldName]
+          : [fields[fieldName]]
+        if (docFieldName === '_id') newVals = newVals.map(stringToId)
+        filter[docFieldName].$in = [
+          ...filter[docFieldName].$in,
+          ...newVals.filter(val => !filter[docFieldName].$in.includes(val))
+        ]
       }
-    }
+      
+      return filter
+    }, {})
+
     const promise = model
       ? model.find(filter).exec()
       : collection.find(filter).toArray()
 
-    return promise.then(orderDocs(ids))
+    return promise.then(orderDocs(fieldsArray))
   })
 
   const cachePrefix = `mongo-${getCollection(collection).collectionName}-`
@@ -51,7 +85,37 @@ export const createCachingMethods = ({ collection, model, cache }) => {
         return EJSON.parse(cacheDoc)
       }
 
-      const doc = await loader.load(idToString(id))
+      const doc = await loader.load(JSON.stringify({ id: id }))
+      if (Number.isInteger(ttl)) {
+        // https://github.com/apollographql/apollo-server/tree/master/packages/apollo-server-caching#apollo-server-caching
+        cache.set(key, EJSON.stringify(doc[0]), { ttl })
+      }
+
+      return doc[0]
+    },
+    findManyByIds: (ids, { ttl } = {}) => {
+      return Promise.all(ids.map(id => methods.findOneById(id, { ttl })))
+    },
+    findByFields: async (fields, { ttl } = {}) => {
+
+      const cleanedFields = {};
+
+      Object.keys(fields).forEach(key => {
+        if (typeof key !== 'undefined') {
+          cleanedFields[key] = fields[key]
+        }
+      })
+
+      const loaderJSON = JSON.stringify(cleanedFields);
+
+      const key = cachePrefix + loaderJSON
+
+      const cacheDoc = await cache.get(key)
+      if (cacheDoc) {
+        return EJSON.parse(cacheDoc)
+      }
+
+      const doc = await loader.load(loaderJSON)
       if (Number.isInteger(ttl)) {
         // https://github.com/apollographql/apollo-server/tree/master/packages/apollo-server-caching#apollo-server-caching
         cache.set(key, EJSON.stringify(doc), { ttl })
@@ -59,13 +123,9 @@ export const createCachingMethods = ({ collection, model, cache }) => {
 
       return doc
     },
-    findManyByIds: (ids, { ttl } = {}) => {
-      return Promise.all(ids.map(id => methods.findOneById(id, { ttl })))
-    },
     deleteFromCacheById: async id => {
-      const stringId = idToString(id)
-      loader.clear(stringId)
-      await cache.delete(cachePrefix + stringId)
+      loader.clear(JSON.stringify({ id: id }))
+      await cache.delete(cachePrefix + idToString(id))
     }
   }
 
