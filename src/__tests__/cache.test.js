@@ -25,7 +25,20 @@ const stringDoc = {
 }
 
 const collectionName = 'test'
-const cacheKey = id => `mongo-${collectionName}-${idToString(id)}`
+const cacheKeyById = id => `mongo-${collectionName}-${idToString(id)}`
+const cacheKeyByFields = fields => {
+  const cleanedFields = {}
+
+  Object.keys(fields).forEach(key => {
+    if (typeof key !== 'undefined') {
+      cleanedFields[key] = Array.isArray(fields[key])
+        ? fields[key]
+        : [fields[key]]
+    }
+  })
+
+  return `mongo-${collectionName}-${JSON.stringify(cleanedFields)}`
+}
 
 describe('createCachingMethods', () => {
   let collection
@@ -168,26 +181,44 @@ describe('createCachingMethods', () => {
     expect(collection.find.mock.calls.length).toBe(1)
   })
 
-  it(`caches each value individually when finding by a single field`, async () => {
-    await api.findByFields({ tags: ['foo', 'baz'] })
-    await api.findByFields({ tags: 'foo' })
+  it(`dataloader caches each value individually when finding by a single field`, async () => {
+    await api.findByFields({ tags: ['foo', 'baz'] }, { ttl: 1 })
 
+    const fooBazCacheValue = await cache.get(
+      cacheKeyByFields({ tags: ['foo', 'baz'] })
+    )
+    const fooCacheValue = await cache.get(cacheKeyByFields({ tags: 'foo' }))
+
+    expect(fooBazCacheValue).toBeDefined()
+    expect(fooCacheValue).toBeUndefined()
+
+    await api.findByFields({ tags: 'foo' })
     expect(collection.find.mock.calls.length).toBe(1)
   })
 
   it(`doesn't cache without ttl`, async () => {
     await api.findOneById(docs.one._id)
 
-    const value = await cache.get(cacheKey(docs.one._id))
+    const value = await cache.get(cacheKeyById(docs.one._id))
     expect(value).toBeUndefined()
   })
 
   it(`caches`, async () => {
     await api.findOneById(docs.one._id, { ttl: 1 })
-    const value = await cache.get(cacheKey(docs.one._id))
+    const value = await cache.get(cacheKeyById(docs.one._id))
     expect(value).toEqual(EJSON.stringify(docs.one))
 
     await api.findOneById(docs.one._id)
+    expect(collection.find.mock.calls.length).toBe(1)
+  })
+
+  it(`caches non-array field values as arrays`, async () => {
+    const fields = { tags: 'foo' }
+    await api.findByFields(fields, { ttl: 1 })
+    const value = await cache.get(cacheKeyByFields(fields))
+    expect(value).toEqual(EJSON.stringify([docs.one]))
+
+    await api.findByFields({ tags: ['foo'] })
     expect(collection.find.mock.calls.length).toBe(1)
   })
 
@@ -195,7 +226,7 @@ describe('createCachingMethods', () => {
     await api.findOneById(docs.one._id, { ttl: 1 })
     await wait(1001)
 
-    const value = await cache.get(cacheKey(docs.one._id))
+    const value = await cache.get(cacheKeyById(docs.one._id))
     expect(value).toBeUndefined()
   })
 
@@ -203,12 +234,12 @@ describe('createCachingMethods', () => {
     for (const doc of [docs.one, docs.two, stringDoc]) {
       await api.findOneById(doc._id, { ttl: 1 })
 
-      const valueBefore = await cache.get(cacheKey(doc._id))
+      const valueBefore = await cache.get(cacheKeyById(doc._id))
       expect(valueBefore).toEqual(EJSON.stringify(doc))
 
       await api.deleteFromCacheById(doc._id)
 
-      const valueAfter = await cache.get(cacheKey(doc._id))
+      const valueAfter = await cache.get(cacheKeyById(doc._id))
       expect(valueAfter).toBeUndefined()
     }
   })
