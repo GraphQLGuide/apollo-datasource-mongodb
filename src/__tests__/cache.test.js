@@ -89,14 +89,6 @@ describe('createCachingMethods', () => {
     expect(collection.find.mock.calls.length).toBe(1)
   })
 
-  // TODO why doesn't this pass?
-  // it.only(`doesn't cache without ttl`, async () => {
-  //   await api.findOneById(docs.id1._id)
-  //   await api.findOneById(docs.id1._id)
-
-  //   expect(collection.find.mock.calls.length).toBe(2)
-  // })
-
   it(`doesn't cache without ttl`, async () => {
     await api.findOneById(docs.one._id)
 
