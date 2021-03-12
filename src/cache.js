@@ -110,7 +110,7 @@ export const createCachingMethods = ({ collection, model, cache }) => {
     findByFields: async (fields, { ttl } = {}) => {
       const cleanedFields = {}
 
-      Object.keys(fields).forEach(key => {
+      Object.keys(fields).sort().forEach(key => {
         if (typeof key !== 'undefined') {
           cleanedFields[key] = Array.isArray(fields[key])
             ? fields[key]
