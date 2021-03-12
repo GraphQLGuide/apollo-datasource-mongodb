@@ -47,8 +47,8 @@ const orderDocs = fieldsArray => docs =>
   )
 
 export const createCachingMethods = ({ collection, model, cache }) => {
-  const loader = new DataLoader(JSONArray => {
-    const fieldsArray = JSONArray.map(JSON.parse)
+  const loader = new DataLoader(jsonArray => {
+    const fieldsArray = jsonArray.map(JSON.parse)
     const filterArray = fieldsArray.reduce((filterArray, fields) => {
       const existingFieldsFilter = filterArray.find(
         filter =>
@@ -96,7 +96,7 @@ export const createCachingMethods = ({ collection, model, cache }) => {
         return EJSON.parse(cacheDoc)
       }
 
-      const docs = await loader.load(JSON.stringify({ id: id }))
+      const docs = await loader.load(JSON.stringify({ id }))
       if (Number.isInteger(ttl)) {
         // https://github.com/apollographql/apollo-server/tree/master/packages/apollo-server-caching#apollo-server-caching
         cache.set(key, EJSON.stringify(docs[0]), { ttl })
@@ -153,7 +153,7 @@ export const createCachingMethods = ({ collection, model, cache }) => {
       return docs
     },
     deleteFromCacheById: async id => {
-      loader.clear(JSON.stringify({ id: id }))
+      loader.clear(JSON.stringify({ id }))
       await cache.delete(cachePrefix + idToString(id))
     }
   }
