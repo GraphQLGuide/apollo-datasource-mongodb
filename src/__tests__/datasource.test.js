@@ -70,6 +70,20 @@ describe('Mongoose', () => {
     expect(isCollectionOrModel(undefined)).toBe(false)
   })
 
+  test('mongoose class-based components', () => {
+    /**
+     * @see https://github.com/GraphQLGuide/apollo-datasource-mongodb/issues/51
+     */
+
+    const ClassModel = mongoose.model(
+      class ClassModel extends mongoose.Model {},
+      new Schema({ name: 'string' })
+    )
+
+    expect(isModel(ClassModel)).toBe(true)
+    expect(isCollectionOrModel(ClassModel)).toBe(true)
+  })
+
   test('getCollectionName', () => {
     expect(getCollection(userCollection).collectionName).toBe('users')
     expect(getCollection(UserModel).collectionName).toBe('users')
