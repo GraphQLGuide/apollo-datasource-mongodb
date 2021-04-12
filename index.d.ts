@@ -7,9 +7,9 @@ declare module 'apollo-datasource-mongodb' {
     Model as MongooseModel
   } from 'mongoose'
 
-  export type Collection<T> = T extends Document
+  export type Collection<T, U = MongoCollection<T>> = T extends Document
     ? MongooseCollection
-    : MongoCollection<T>
+    : U
 
   export type Model<T> = T extends Document ? MongooseModel<T> : undefined
 
