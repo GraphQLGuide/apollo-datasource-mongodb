@@ -6,10 +6,11 @@ Apollo [data source](https://www.apollographql.com/docs/apollo-server/features/d
 npm i apollo-datasource-mongodb
 ```
 
-This package uses [DataLoader](https://github.com/graphql/dataloader) for batching and per-request memoization caching. It also optionally (if you provide a `ttl`) does shared application-level caching (using either the default Apollo `InMemoryLRUCache` or the [cache you provide to ApolloServer()](https://www.apollographql.com/docs/apollo-server/features/data-sources#using-memcachedredis-as-a-cache-storage-backend)). It does this only for these two methods:
+This package uses [DataLoader](https://github.com/graphql/dataloader) for batching and per-request memoization caching. It also optionally (if you provide a `ttl`) does shared application-level caching (using either the default Apollo `InMemoryLRUCache` or the [cache you provide to ApolloServer()](https://www.apollographql.com/docs/apollo-server/features/data-sources#using-memcachedredis-as-a-cache-storage-backend)). It does this for the following methods:
 
 - [`findOneById(id, options)`](#findonebyid)
 - [`findManyByIds(ids, options)`](#findmanybyids)
+- [`findByFields(fields, options)`](#findbyfields)
 
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -24,6 +25,8 @@ This package uses [DataLoader](https://github.com/graphql/dataloader) for batchi
 - [API](#api)
   - [findOneById](#findonebyid)
   - [findManyByIds](#findmanybyids)
+  - [findByFields](#findbyfields)
+    - [Examples:](#examples)
   - [deleteFromCacheById](#deletefromcachebyid)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -183,6 +186,7 @@ interface UserDocument {
   username: string
   password: string
   email: string
+  interests: [string]
 }
 
 // This is optional
@@ -235,6 +239,39 @@ Resolves to the found document. Uses DataLoader to load `id`. DataLoader uses `c
 `this.findManyByIds(ids, { ttl })`
 
 Calls [`findOneById()`](#findonebyid) for each id. Resolves to an array of documents.
+
+### findByFields
+
+`this.findByFields(fields, { ttl })`
+
+Resolves to an array of documents matching the passed fields.
+
+fields has type `{ [fieldName: string]: string | number | boolean | [string | number | boolean] }`.
+
+#### Examples:
+
+```js
+
+  // get user by username
+  // `collection.find({ username: $in: ['testUser'] })`
+  this.getByFields({
+    username: 'testUser'
+  })
+
+  // get all users with either the "gaming" OR "games" interest
+  // `collection.find({ interests: $in: ['gaming', 'games'] })`
+  this.getByFields({
+    interests: ['gaming', 'games']
+  })
+
+  // get user by username AND with either the "gaming" OR "games" interest
+  // `collection.find({ username: $in: ['testUser'], interests: $in: ['gaming', 'games'] })`
+  this.getByFields({
+    username: 'testUser',
+    interests: ['gaming', 'games']
+  })
+
+```
 
 ### deleteFromCacheById
 
