@@ -132,6 +132,12 @@ describe('createCachingMethods', () => {
     expect(collection.find.mock.calls.length).toBe(1)
   })
 
+  it(`memoizes with Dataloader`, async () => {
+    await api.findOneById(docs.one._id)
+    await api.findOneById(docs.one._id)
+    expect(collection.find.mock.calls.length).toBe(1)
+  })
+
   it('finds by field', async () => {
     const foundDocs = await api.findByFields({ foo: 'bar' })
 
