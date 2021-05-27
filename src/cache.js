@@ -5,17 +5,23 @@ import { EJSON } from 'bson'
 import { getCollection } from './helpers'
 
 export const idToString = id => (id instanceof ObjectId ? id.toHexString() : id)
-const stringToId = str => {
-  if (str instanceof ObjectId) {
-    return str
+
+// https://www.geeksforgeeks.org/how-to-check-if-a-string-is-valid-mongodb-objectid-in-nodejs/
+export const isValidObjectIdString = string =>
+  ObjectId.isValid(string) && String(new ObjectId(string)) === string
+
+export const stringToId = string => {
+  if (string instanceof ObjectId) {
+    return string
   }
 
-  if (ObjectId.isValid(str)) {
-    return new ObjectId(str)
+  if (isValidObjectIdString(string)) {
+    return new ObjectId(string)
   }
 
-  return str
+  return string
 }
+
 const fieldToDocField = key => (key === 'id' ? '_id' : key)
 
 // https://github.com/graphql/dataloader#batch-function
@@ -110,13 +116,15 @@ export const createCachingMethods = ({ collection, model, cache }) => {
     findByFields: async (fields, { ttl } = {}) => {
       const cleanedFields = {}
 
-      Object.keys(fields).sort().forEach(key => {
-        if (typeof key !== 'undefined') {
-          cleanedFields[key] = Array.isArray(fields[key])
-            ? fields[key]
-            : [fields[key]]
-        }
-      })
+      Object.keys(fields)
+        .sort()
+        .forEach(key => {
+          if (typeof key !== 'undefined') {
+            cleanedFields[key] = Array.isArray(fields[key])
+              ? fields[key]
+              : [fields[key]]
+          }
+        })
 
       const loaderJSON = JSON.stringify(cleanedFields)
 

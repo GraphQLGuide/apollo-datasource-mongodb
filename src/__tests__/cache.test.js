@@ -3,9 +3,13 @@ import wait from 'waait'
 import { ObjectId } from 'mongodb'
 import { EJSON } from 'bson'
 
-import { createCachingMethods, idToString } from '../cache'
+import {
+  createCachingMethods,
+  idToString,
+  isValidObjectIdString
+} from '../cache'
 
-const hexId = 'aaaa0000bbbb0000cccc0000'
+const hexId = '5cf82e14a220a607eb64a7d4'
 
 const docs = {
   one: {
@@ -263,5 +267,14 @@ describe('createCachingMethods', () => {
       await api.findOneById(id)
       expect(collection.find).toHaveBeenCalled()
     }
+  })
+})
+
+describe('isValidObjectIdString', () => {
+  it('works', () => {
+    const trickyId = 'toptoptoptop'
+    expect(ObjectId.isValid(trickyId)).toBe(true)
+    expect(isValidObjectIdString(trickyId)).toBe(false)
+    expect(isValidObjectIdString(hexId)).toBe(true)
   })
 })
