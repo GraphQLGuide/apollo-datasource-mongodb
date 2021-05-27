@@ -10,7 +10,7 @@ const stringToId = str => {
     return str
   }
 
-  if (ObjectId.isValid(str)) {
+  if (ObjectId.isValid(str) && new ObjectId(str) === str) {
     return new ObjectId(str)
   }
 
