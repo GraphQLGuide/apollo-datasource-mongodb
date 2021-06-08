@@ -16,7 +16,7 @@
     "node": ">=8"
   },
   "dependencies": {
-    "@types/mongodb": "^3.5.25",
+    "@types/mongodb": "^3.5.27",
     "@types/mongoose": "^5.7.28",
     "apollo-datasource": "^0.3.1",
     "apollo-server-caching": "^0.3.1",
