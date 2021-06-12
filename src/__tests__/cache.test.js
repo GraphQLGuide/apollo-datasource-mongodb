@@ -152,6 +152,15 @@ describe('createCachingMethods', () => {
     expect(collection.find.mock.calls.length).toBe(1)
   })
 
+  it('finds by ObjectID field', async () => {
+    const foundDocs = await api.findByFields({ _id: ObjectId(hexId) })
+
+    expect(foundDocs[0]).toBe(docs.one)
+    expect(foundDocs.length).toBe(1)
+
+    expect(collection.find.mock.calls.length).toBe(1)
+  })
+
   it('finds by array field', async () => {
     const foundDocs = await api.findByFields({ tags: 'bar' })
 
