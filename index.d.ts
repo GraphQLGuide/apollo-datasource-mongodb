@@ -18,7 +18,7 @@ declare module 'apollo-datasource-mongodb' {
     : Collection<T>
   
   export interface Fields {
-    [fieldName: string]: string | number | boolean | [string | number | boolean]
+    [fieldName: string]: string | number | boolean | (string | number | boolean)[]
   }
 
   export interface Options {
