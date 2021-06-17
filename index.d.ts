@@ -4,7 +4,7 @@ declare module 'apollo-datasource-mongodb' {
   import {
     Collection as MongooseCollection,
     Document,
-    Model as MongooseModel
+    Model as MongooseModel,
   } from 'mongoose'
 
   export type Collection<T, U = MongoCollection<T>> = T extends Document
@@ -16,9 +16,14 @@ declare module 'apollo-datasource-mongodb' {
   export type ModelOrCollection<T> = T extends Document
     ? Model<T>
     : Collection<T>
-  
+
   export interface Fields {
-    [fieldName: string]: string | number | boolean | (string | number | boolean)[]
+    [fieldName: string]:
+      | string
+      | number
+      | boolean
+      | ObjectId
+      | (string | number | boolean | ObjectId)[]
   }
 
   export interface Options {
