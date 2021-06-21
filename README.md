@@ -26,7 +26,7 @@ This package uses [DataLoader](https://github.com/graphql/dataloader) for batchi
   - [findOneById](#findonebyid)
   - [findManyByIds](#findmanybyids)
   - [findByFields](#findbyfields)
-    - [Examples:](#examples)
+    - [Examples](#examples)
   - [deleteFromCacheById](#deletefromcachebyid)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -246,35 +246,44 @@ Calls [`findOneById()`](#findonebyid) for each id. Resolves to an array of docum
 
 Resolves to an array of documents matching the passed fields.
 
-fields has type `{ [fieldName: string]: string | number | boolean | [string | number | boolean] }`.
+`fields` has this type:
 
-#### Examples:
+```ts
+interface Fields {
+  [fieldName: string]:
+    | string
+    | number
+    | boolean
+    | ObjectId
+    | (string | number | boolean | ObjectId)[]
+}
+```
+
+#### Examples
 
 ```js
+// get user by username
+// `collection.find({ username: $in: ['testUser'] })`
+this.getByFields({
+  username: 'testUser'
+})
 
-  // get user by username
-  // `collection.find({ username: $in: ['testUser'] })`
-  this.getByFields({
-    username: 'testUser'
-  })
+// get all users with either the "gaming" OR "games" interest
+// `collection.find({ interests: $in: ['gaming', 'games'] })`
+this.getByFields({
+  interests: ['gaming', 'games']
+})
 
-  // get all users with either the "gaming" OR "games" interest
-  // `collection.find({ interests: $in: ['gaming', 'games'] })`
-  this.getByFields({
-    interests: ['gaming', 'games']
-  })
-
-  // get user by username AND with either the "gaming" OR "games" interest
-  // `collection.find({ username: $in: ['testUser'], interests: $in: ['gaming', 'games'] })`
-  this.getByFields({
-    username: 'testUser',
-    interests: ['gaming', 'games']
-  })
-
+// get user by username AND with either the "gaming" OR "games" interest
+// `collection.find({ username: $in: ['testUser'], interests: $in: ['gaming', 'games'] })`
+this.getByFields({
+  username: 'testUser',
+  interests: ['gaming', 'games']
+})
 ```
 
 ### deleteFromCacheById
 
 `this.deleteFromCacheById(id)`
 
-Deletes a document from the cache.
+Deletes a document from the cache that was fetched with `findOneById` or `findManyByIds`.
