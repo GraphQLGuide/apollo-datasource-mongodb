@@ -264,19 +264,19 @@ interface Fields {
 ```js
 // get user by username
 // `collection.find({ username: $in: ['testUser'] })`
-this.getByFields({
+this.findByFields({
   username: 'testUser'
 })
 
 // get all users with either the "gaming" OR "games" interest
 // `collection.find({ interests: $in: ['gaming', 'games'] })`
-this.getByFields({
+this.findByFields({
   interests: ['gaming', 'games']
 })
 
 // get user by username AND with either the "gaming" OR "games" interest
 // `collection.find({ username: $in: ['testUser'], interests: $in: ['gaming', 'games'] })`
-this.getByFields({
+this.findByFields({
   username: 'testUser',
   interests: ['gaming', 'games']
 })
