@@ -8,6 +8,7 @@
     "build": "babel src -d dist --ignore **/*.test.js",
     "dev": "babel src -d dist --watch --ignore **/*.test.js",
     "test": "jest --watch",
+    "ci": "jest --ci",
     "prepublishOnly": "npm run build",
     "prettify": "prettier --write **/*.js",
     "release": "release patch && echo 'now run `npm publish`'"
