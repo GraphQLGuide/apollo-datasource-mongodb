@@ -69,10 +69,12 @@ export const createCachingMethods = ({ collection, model, cache }) => {
         let newVals = Array.isArray(fields[fieldName])
           ? fields[fieldName]
           : [fields[fieldName]]
-        if (docFieldName === '_id') newVals = newVals.map(stringToId)
+
         filter[docFieldName].$in = [
           ...filter[docFieldName].$in,
-          ...newVals.filter(val => !filter[docFieldName].$in.includes(val))
+          ...newVals
+            .map(stringToId)
+            .filter(val => !filter[docFieldName].$in.includes(val))
         ]
       }
       if (existingFieldsFilter) return filterArray
