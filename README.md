@@ -287,3 +287,9 @@ this.findByFields({
 `this.deleteFromCacheById(id)`
 
 Deletes a document from the cache that was fetched with `findOneById` or `findManyByIds`.
+
+### deleteFromCacheByFields
+
+`this.deleteFromCacheByFields(fields)`
+
+Deletes a document from the cache that was fetched with `findByFields`. Fields should be passed in exactly the same way they were used to find with.
