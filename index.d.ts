@@ -57,5 +57,6 @@ declare module 'apollo-datasource-mongodb' {
     ): Promise<(TData | null | undefined)[]>
 
     deleteFromCacheById(id: ObjectId | string): Promise<void>
+    deleteFromCacheByFields(fields: Fields): Promise<void>
   }
 }
