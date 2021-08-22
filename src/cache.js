@@ -165,6 +165,25 @@ export const createCachingMethods = ({ collection, model, cache }) => {
     deleteFromCacheById: async id => {
       loader.clear(JSON.stringify({ id }))
       await cache.delete(cachePrefix + idToString(id))
+    },
+    deleteFromCacheByFields: async fields => {
+      const cleanedFields = {}
+
+      Object.keys(fields)
+        .sort()
+        .forEach(key => {
+          if (typeof key !== 'undefined') {
+            cleanedFields[key] = Array.isArray(fields[key])
+              ? fields[key]
+              : [fields[key]]
+          }
+        })
+
+      const loaderJSON = JSON.stringify(cleanedFields)
+
+      const key = cachePrefix + loaderJSON
+      loader.clear(loaderJSON)
+      await cache.delete(key)
     }
   }
 

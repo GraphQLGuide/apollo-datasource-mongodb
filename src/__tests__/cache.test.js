@@ -111,8 +111,10 @@ describe('createCachingMethods', () => {
   it('adds the right methods', () => {
     expect(api.findOneById).toBeDefined()
     expect(api.findManyByIds).toBeDefined()
-    expect(api.findByFields).toBeDefined()
     expect(api.deleteFromCacheById).toBeDefined()
+
+    expect(api.findByFields).toBeDefined()
+    expect(api.deleteFromCacheByFields).toBeDefined()
   })
 
   it('finds one with ObjectId', async () => {
@@ -249,7 +251,7 @@ describe('createCachingMethods', () => {
     expect(value).toBeUndefined()
   })
 
-  it(`deletes from cache`, async () => {
+  it(`deletes from cache by ID`, async () => {
     for (const doc of [docs.one, docs.two, stringDoc]) {
       await api.findOneById(doc._id, { ttl: 1 })
 
@@ -263,7 +265,7 @@ describe('createCachingMethods', () => {
     }
   })
 
-  it('deletes from DataLoader cache', async () => {
+  it('deletes from DataLoader cache by ID', async () => {
     for (const id of [docs.one._id, docs.two._id, stringDoc._id]) {
       await api.findOneById(id)
       expect(collection.find).toHaveBeenCalled()
@@ -276,6 +278,19 @@ describe('createCachingMethods', () => {
       await api.findOneById(id)
       expect(collection.find).toHaveBeenCalled()
     }
+  })
+
+  it(`deletes from cache by fields`, async () => {
+    const fields = { foo: 'bar' }
+    await api.findByFields(fields, { ttl: 1 })
+
+    const valueBefore = await cache.get(cacheKeyByFields(fields))
+    expect(valueBefore).toEqual(EJSON.stringify([docs.one, docs.two]))
+
+    await api.deleteFromCacheByFields(fields)
+
+    const valueAfter = await cache.get(cacheKeyByFields(fields))
+    expect(valueAfter).toBeUndefined()
   })
 })
 
