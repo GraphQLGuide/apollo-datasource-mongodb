@@ -173,7 +173,7 @@ describe('createCachingMethods', () => {
     expect(collection.find.mock.calls.length).toBe(1)
   })
 
-  it('finds by mutiple fields', async () => {
+  it('finds by multiple fields', async () => {
     const foundDocs = await api.findByFields({
       tags: ['foo', 'bar'],
       foo: 'bar'
@@ -224,7 +224,7 @@ describe('createCachingMethods', () => {
     expect(value).toBeUndefined()
   })
 
-  it(`caches`, async () => {
+  it(`caches by ID`, async () => {
     await api.findOneById(docs.one._id, { ttl: 1 })
     const value = await cache.get(cacheKeyById(docs.one._id))
     expect(value).toEqual(EJSON.stringify(docs.one))
@@ -243,7 +243,7 @@ describe('createCachingMethods', () => {
     expect(collection.find.mock.calls.length).toBe(1)
   })
 
-  it(`caches with ttl`, async () => {
+  it(`caches ID with ttl`, async () => {
     await api.findOneById(docs.one._id, { ttl: 1 })
     await wait(1001)
 
