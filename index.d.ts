@@ -1,12 +1,12 @@
 declare module 'apollo-datasource-mongodb' {
   import { DataSource } from 'apollo-datasource'
-  import { Collection as MongoCollection, ObjectId } from 'mongodb'
+  import { Collection as MongoCollection, ObjectId as MongoDBObjectId } from 'mongodb'
   import {
     Collection as MongooseCollection,
     Document,
     Model as MongooseModel,
     LeanDocument,
-    MongooseDocument
+    ObjectId as MongooseObjectId
   } from 'mongoose'
 
   export type Collection<T, U = MongoCollection<T>> = T extends Document
@@ -21,6 +21,8 @@ declare module 'apollo-datasource-mongodb' {
     ? U
     : Collection<T>
 
+  type ObjectId = MongoDBObjectId | MongooseObjectId;
+
   export interface Fields {
     [fieldName: string]:
       | string
@@ -30,7 +32,7 @@ declare module 'apollo-datasource-mongodb' {
       | (string | number | boolean | ObjectId)[]
   }
 
-  type MongooseDocumentOrMongoCollection<T> = MongoCollection<T> | MongooseDocument
+  type MongooseDocumentOrMongoCollection<T> = MongoCollection<T> | Document
 
   export interface Options {
     ttl: number
