@@ -38,7 +38,7 @@ declare module 'apollo-datasource-mongodb' {
     ttl: number
   }
 
-  export class MongoDataSource<TData extends MongooseDocumentOrMongoCollection<any>, TContext = any> extends DataSource<
+  export abstract class MongoDataSource<TData extends MongooseDocumentOrMongoCollection<any>, TContext = any> extends DataSource<
     TContext
   > {
     protected context: TContext
