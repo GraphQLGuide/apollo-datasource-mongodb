@@ -14,3 +14,7 @@ export const isCollectionOrModel = x =>
   Boolean(x && (typeof x === TYPEOF_COLLECTION || isModel(x)))
 
 export const getCollection = x => (isModel(x) ? x.collection : x)
+
+const DEBUG = false
+
+export const log = (...args) => DEBUG && console.log(...args)

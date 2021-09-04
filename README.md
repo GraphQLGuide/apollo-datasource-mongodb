@@ -71,7 +71,7 @@ const server = new ApolloServer({
 })
 ```
 
-Inside the data source, the collection is available at `this.collection` (e.g. `this.collection.update({_id: 'foo, { $set: { name: 'me' }}})`). The model (if applicable) is available at `this.model` (`new this.model({ name: 'Alice' })`). The request's context is available at `this.context`. For example, if you put the logged-in user's ID on context as `context.currentUserId`:
+Inside the data source, the collection is available at `this.collection` (e.g. `this.collection.update({_id: 'foo, { $set: { name: 'me' }}})`). The model (if you're using Mongoose) is available at `this.model` (`new this.model({ name: 'Alice' })`). The request's context is available at `this.context`. For example, if you put the logged-in user's ID on context as `context.currentUserId`:
 
 ```js
 class Users extends MongoDataSource {
@@ -98,7 +98,7 @@ class Users extends MongoDataSource {
 }
 ```
 
-If you're passing a Mongoose model rather than a collection, Mongoose will be used for data fetching. All transformations definded on that model (virtuals, plugins, etc.) will be applied to your data before caching, just like you would expect it. If you're using reference fields, you might be interested in checking out [mongoose-autopopulate](https://www.npmjs.com/package/mongoose-autopopulate).
+If you're passing a Mongoose model rather than a collection, Mongoose will be used for data fetching. All transformations defined on that model (virtuals, plugins, etc.) will be applied to your data before caching, just like you would expect it. If you're using reference fields, you might be interested in checking out [mongoose-autopopulate](https://www.npmjs.com/package/mongoose-autopopulate).
 
 ### Batching
 

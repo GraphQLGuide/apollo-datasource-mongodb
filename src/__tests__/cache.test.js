@@ -6,8 +6,11 @@ import { EJSON } from 'bson'
 import {
   createCachingMethods,
   idToString,
-  isValidObjectIdString
+  isValidObjectIdString,
+  prepFields
 } from '../cache'
+
+import { log } from '../helpers'
 
 const hexId = '5cf82e14a220a607eb64a7d4'
 
@@ -31,17 +34,9 @@ const stringDoc = {
 const collectionName = 'test'
 const cacheKeyById = id => `mongo-${collectionName}-${idToString(id)}`
 const cacheKeyByFields = fields => {
-  const cleanedFields = {}
+  const { loaderKey } = prepFields(fields)
 
-  Object.keys(fields).forEach(key => {
-    if (typeof key !== 'undefined') {
-      cleanedFields[key] = Array.isArray(fields[key])
-        ? fields[key]
-        : [fields[key]]
-    }
-  })
-
-  return `mongo-${collectionName}-${JSON.stringify(cleanedFields)}`
+  return `mongo-${collectionName}-${loaderKey}`
 }
 
 describe('createCachingMethods', () => {
