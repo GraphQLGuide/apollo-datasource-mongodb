@@ -164,12 +164,13 @@ describe('createCachingMethods', () => {
     expect(collection.find.mock.calls.length).toBe(1)
   })
 
+  // See datasource.test.js, where we test against a database instance
+  // (so we don't have to update our already-complex collection.find mock)
+  //
   // it('finds by nested ObjectID field', async () => {
   //   const foundDocs = await api.findByFields({ 'nested._id': objectID })
-
   //   expect(foundDocs[0]).toBe(docs.three)
   //   expect(foundDocs.length).toBe(1)
-
   //   expect(collection.find.mock.calls.length).toBe(1)
   // })
 
