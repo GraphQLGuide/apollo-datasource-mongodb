@@ -44,14 +44,31 @@ export function prepFields(fields) {
   return { loaderKey: EJSON.stringify(cleanedFields), cleanedFields }
 }
 
+// getNestedValue({ nested: { foo: 'bar' } }, 'nested.foo')
+// => 'bar'
+function getNestedValue(object, string) {
+  string = string.replace(/\[(\w+)\]/g, '.$1') // convert indexes to properties
+  string = string.replace(/^\./, '') // strip a leading dot
+  var a = string.split('.')
+  for (var i = 0, n = a.length; i < n; ++i) {
+    var k = a[i]
+    if (k in object) {
+      object = object[k]
+    } else {
+      return
+    }
+  }
+  return object
+}
+
 // https://github.com/graphql/dataloader#batch-function
 // "The Array of values must be the same length as the Array of keys."
 // "Each index in the Array of values must correspond to the same index in the Array of keys."
-const orderDocs = fieldsArray => docs =>
+const orderDocs = (fieldsArray, docs) =>
   fieldsArray.map(fields =>
     docs.filter(doc => {
       for (let fieldName of Object.keys(fields)) {
-        const fieldValue = fields[fieldName]
+        const fieldValue = getNestedValue(fields, fieldName)
 
         if (typeof fieldValue === 'undefined') continue
 
@@ -107,6 +124,7 @@ export const createCachingMethods = ({ collection, model, cache }) => {
       if (existingFieldsFilter) return filterArray
       return [...filterArray, filter]
     }, [])
+    log('filterArray: ', filterArray)
 
     const filter =
       filterArray.length === 1
@@ -114,14 +132,18 @@ export const createCachingMethods = ({ collection, model, cache }) => {
         : {
             $or: filterArray
           }
+    log('filter: ', filter)
 
     const findPromise = model
       ? model.find(filter).exec()
       : collection.find(filter).toArray()
 
     const results = await findPromise
-    const orderedDocs = orderDocs(fieldsArray)(results)
+    log('results: ', results)
+
+    const orderedDocs = orderDocs(fieldsArray, results)
     log('orderedDocs: ', orderedDocs)
+
     return orderedDocs
   })
 

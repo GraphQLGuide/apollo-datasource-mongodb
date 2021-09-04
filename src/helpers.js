@@ -15,6 +15,6 @@ export const isCollectionOrModel = x =>
 
 export const getCollection = x => (isModel(x) ? x.collection : x)
 
-const DEBUG = false
+const DEBUG = true
 
 export const log = (...args) => DEBUG && console.log(...args)

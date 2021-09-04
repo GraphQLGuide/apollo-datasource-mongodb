@@ -13,16 +13,22 @@ import {
 import { log } from '../helpers'
 
 const hexId = '5cf82e14a220a607eb64a7d4'
+const objectID = ObjectId(hexId)
 
 const docs = {
   one: {
-    _id: ObjectId(hexId),
+    _id: objectID,
     foo: 'bar',
     tags: ['foo', 'bar']
   },
   two: {
     _id: ObjectId(),
     foo: 'bar'
+  },
+  three: {
+    nested: {
+      _id: objectID
+    }
   }
 }
 
@@ -150,13 +156,22 @@ describe('createCachingMethods', () => {
   })
 
   it('finds by ObjectID field', async () => {
-    const foundDocs = await api.findByFields({ _id: ObjectId(hexId) })
+    const foundDocs = await api.findByFields({ _id: objectID })
 
     expect(foundDocs[0]).toBe(docs.one)
     expect(foundDocs.length).toBe(1)
 
     expect(collection.find.mock.calls.length).toBe(1)
   })
+
+  // it('finds by nested ObjectID field', async () => {
+  //   const foundDocs = await api.findByFields({ 'nested._id': objectID })
+
+  //   expect(foundDocs[0]).toBe(docs.three)
+  //   expect(foundDocs.length).toBe(1)
+
+  //   expect(collection.find.mock.calls.length).toBe(1)
+  // })
 
   it('finds by array field', async () => {
     const foundDocs = await api.findByFields({ tags: 'bar' })

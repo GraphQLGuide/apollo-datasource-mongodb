@@ -1,4 +1,4 @@
-import { MongoClient } from 'mongodb'
+import { MongoClient, ObjectId } from 'mongodb'
 import mongoose, { Schema, model } from 'mongoose'
 
 import { MongoDataSource } from '../datasource'
@@ -25,7 +25,7 @@ describe('MongoDataSource', () => {
   })
 })
 
-const URL = 'mongodb://localhost:27017/test'
+const URL = 'mongodb://localhost:27017/test-apollo-datasource'
 const connectArgs = [
   URL,
   {
@@ -41,10 +41,14 @@ const connect = async () => {
   return client.db()
 }
 
+const hexId = '5cf82e14a220a607eb64a7d4'
+const objectID = ObjectId(hexId)
+
 describe('Mongoose', () => {
   let UserModel
   let userCollection
   let alice
+  let nestedBob
 
   beforeAll(async () => {
     const userSchema = new Schema({ name: 'string' })
@@ -56,6 +60,12 @@ describe('Mongoose', () => {
       { name: 'Alice' },
       { name: 'Alice' },
       { upsert: true, new: true }
+    )
+
+    nestedBob = await userCollection.findOneAndReplace(
+      { name: 'Bob' },
+      { name: 'Bob', nested: [{ _id: objectID }] },
+      { new: true, upsert: true }
     )
   })
 
@@ -103,8 +113,20 @@ describe('Mongoose', () => {
   test('Data Source with Collection', async () => {
     const users = new Users(userCollection)
     users.initialize()
+
     const user = await users.findOneById(alice._id)
+
     expect(user.name).toBe('Alice')
     expect(user.id).toBeUndefined()
+  })
+
+  test('nested findByFields', async () => {
+    const users = new Users(userCollection)
+    users.initialize()
+
+    const [user] = await users.findByFields({ 'nested._id': objectID })
+
+    expect(user).toBeDefined()
+    expect(user.name).toBe('Bob')
   })
 })
