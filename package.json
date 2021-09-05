@@ -11,7 +11,7 @@
     "ci": "jest --ci",
     "prepublishOnly": "npm run build",
     "prettify": "prettier --write **/*.js",
-    "release": "release patch && echo 'now run `npm publish`'"
+    "release": "release patch && echo 'A Github Action will now publish to NPM! 🚀'"
   },
   "engines": {
     "node": ">=8"
