@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.getCollection = exports.isCollectionOrModel = exports.isModel = void 0;
+exports.log = exports.getCollection = exports.isCollectionOrModel = exports.isModel = void 0;
 const TYPEOF_COLLECTION = 'object';
 
 const isModel = x => Boolean(typeof x === 'function' && x.prototype &&
@@ -21,3 +21,8 @@ exports.isCollectionOrModel = isCollectionOrModel;
 const getCollection = x => isModel(x) ? x.collection : x;
 
 exports.getCollection = getCollection;
+const DEBUG = false;
+
+const log = (...args) => DEBUG && console.log(...args);
+
+exports.log = log;
