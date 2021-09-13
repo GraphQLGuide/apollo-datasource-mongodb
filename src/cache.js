@@ -46,7 +46,7 @@ export function prepFields(fields) {
 
 // getNestedValue({ nested: { foo: 'bar' } }, 'nested.foo')
 // => 'bar'
-function getNestedValue(object, string) {
+export function getNestedValue(object, string) {
   string = string.replace(/\[(\w+)\]/g, '.$1') // convert indexes to properties
   string = string.replace(/^\./, '') // strip a leading dot
   var a = string.split('.')

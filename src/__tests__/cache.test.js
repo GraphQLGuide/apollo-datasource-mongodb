@@ -7,7 +7,8 @@ import {
   createCachingMethods,
   idToString,
   isValidObjectIdString,
-  prepFields
+  prepFields,
+  getNestedValue
 } from '../cache'
 
 import { log } from '../helpers'
@@ -311,5 +312,18 @@ describe('isValidObjectIdString', () => {
     expect(ObjectId.isValid(trickyId)).toBe(true)
     expect(isValidObjectIdString(trickyId)).toBe(false)
     expect(isValidObjectIdString(hexId)).toBe(true)
+  })
+})
+
+describe('getNestedValue', () => {
+  it('works', () => {
+    const obj = {
+      nested: { foo: 'bar', fooB: '', fooC: null, fooE: { inner: true } }
+    }
+    expect(getNestedValue(obj, 'nested.foo')).toEqual('bar')
+    expect(getNestedValue(obj, 'nested.fooB')).toEqual('')
+    expect(getNestedValue(obj, 'nested.fooC')).toEqual(null)
+    expect(getNestedValue(obj, 'nested.fooD')).toBeUndefined()
+    expect(getNestedValue(obj, 'nested.fooE.inner')).toBe(true)
   })
 })

@@ -64,7 +64,7 @@ describe('Mongoose', () => {
 
     nestedBob = await userCollection.findOneAndReplace(
       { name: 'Bob' },
-      { name: 'Bob', nested: [{ _id: objectID }] },
+      { name: 'Bob', nested: { _id: objectID, field1: 'value1', field2: '' } },
       { new: true, upsert: true }
     )
   })
@@ -128,5 +128,11 @@ describe('Mongoose', () => {
 
     expect(user).toBeDefined()
     expect(user.name).toBe('Bob')
+
+    const res1 = await users.findByFields({ 'nested.field1': 'value1' })
+    const res2 = await users.findByFields({ 'nested.field2': 'value1' })
+
+    expect(res1[0].name).toBe('Bob')
+    expect(res2[0]).toBeUndefined()
   })
 })
