@@ -22,7 +22,8 @@
     "apollo-server-caching": "^0.3.1",
     "apollo-server-errors": "^2.4.1",
     "bson": "^4.1.0",
-    "dataloader": "^1.4.0"
+    "dataloader": "^1.4.0",
+    "mongoose": "^5.13.8"
   },
   "devDependencies": {
     "@babel/cli": "^7.10.3",
@@ -32,7 +33,6 @@
     "graphql": "^14.6.0",
     "jest": "^24.9.0",
     "mongodb": "^3.5.9",
-    "mongoose": "^5.13.8",
     "prettier": "^1.19.1",
     "release": "^6.3.0",
     "waait": "^1.0.5"
