@@ -63,6 +63,6 @@ declare module 'apollo-datasource-mongodb' {
     ): Promise<(LeanDocument<TData> | null)[]>
 
     protected deleteFromCacheById(id: ObjectId | string): Promise<void>
-    deleteFromCacheByFields(fields: Fields): Promise<void>
+    protected deleteFromCacheByFields(fields: Fields): Promise<void>
   }
 }
