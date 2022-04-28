@@ -35,7 +35,7 @@
     "graphql": "^14.6.0",
     "jest": "^24.9.0",
     "mongodb": "^3.5.9",
-    "mongoose": "^6.3.1",
+    "mongoose": "^5.13.8",
     "prettier": "^1.19.1",
     "release": "^6.3.0",
     "waait": "^1.0.5"
