@@ -135,7 +135,7 @@ export const createCachingMethods = ({ collection, model, cache }) => {
     log('filter: ', filter)
 
     const findPromise = model
-      ? model.find(filter).exec()
+      ? model.find(filter).lean()
       : collection.find(filter).toArray()
 
     const results = await findPromise
