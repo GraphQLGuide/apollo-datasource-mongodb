@@ -244,7 +244,7 @@ Calls [`findOneById()`](#findonebyid) for each id. Resolves to an array of docum
 
 `this.findByFields(fields, { ttl })`
 
-Resolves to an array of documents matching the passed fields.
+Resolves to an array of documents matching the passed fields. If an empty object is passed as the `fields` parameter, resolves to an array containing all documents in the given collection.
 
 `fields` has this type:
 
