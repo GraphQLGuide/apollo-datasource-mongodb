@@ -213,10 +213,24 @@ export const createCachingMethods = ({ collection, model, cache }) => {
       await cache.delete(cacheKey)
     },
     deleteFromCacheByFields: async fields => {
-      const { loaderKey } = prepFields(fields)
-      const cacheKey = cachePrefix + loaderKey
+      const { cleanedFields, loaderKey } = prepFields(fields)
 
-      loader.clear(loaderKey)
+      const fieldNames = Object.keys(cleanedFields)
+
+      // match logic from findByFields
+      if (fieldNames.length === 1) {
+        const field = cleanedFields[fieldNames[0]]
+        const fieldArray = Array.isArray(field) ? field : [field]
+        fieldArray.forEach(value => {
+          const filter = {}
+          filter[fieldNames[0]] = value
+          loader.clear(EJSON.stringify(filter))
+        })
+      } else {
+        loader.clear(loaderKey)
+      }
+
+      const cacheKey = cachePrefix + loaderKey
       await cache.delete(cacheKey)
     }
   }
