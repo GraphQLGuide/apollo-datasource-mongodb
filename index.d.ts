@@ -5,8 +5,7 @@ declare module 'apollo-datasource-mongodb' {
     Collection as MongooseCollection,
     Document,
     Model as MongooseModel,
-    LeanDocument,
-    MongooseDocument
+    LeanDocument
   } from 'mongoose'
 
   export type Collection<T, U = MongoCollection<T>> = T extends Document
@@ -30,13 +29,11 @@ declare module 'apollo-datasource-mongodb' {
       | (string | number | boolean | ObjectId)[]
   }
 
-  type MongooseDocumentOrMongoCollection<T> = MongoCollection<T> | MongooseDocument
-
   export interface Options {
     ttl: number
   }
 
-  export class MongoDataSource<TData extends MongooseDocumentOrMongoCollection<any>, TContext = any> extends DataSource<
+  export class MongoDataSource<TData, TContext = any> extends DataSource<
     TContext
   > {
     protected context: TContext
