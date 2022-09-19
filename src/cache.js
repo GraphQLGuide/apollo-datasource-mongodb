@@ -94,7 +94,40 @@ const orderDocs = (fieldsArray, docs) =>
     })
   )
 
+const getSerializer = model => {
+  if (!model) {
+    return {
+      serializeDocument: plainObject => EJSON.stringify(plainObject),
+      serializeDocuments: plainObject => EJSON.stringify(plainObject),
+      deserializeDocument: cachedValue => EJSON.parse(cachedValue),
+      deserializeDocuments: cachedValue => EJSON.parse(cachedValue)
+    }
+  } else {
+    return {
+      serializeDocument: mongooseDocument =>
+        EJSON.stringify(mongooseDocument.toObject()),
+      serializeDocuments: mongooseDocuments =>
+        EJSON.stringify(
+          mongooseDocuments.map(mongooseDocument => mongooseDocument.toObject())
+        ),
+      deserializeDocument: cachedValue =>
+        model.hydrate(EJSON.parse(cachedValue)),
+      deserializeDocuments: cachedValueArray =>
+        EJSON.parse(cachedValueArray).map(cachedValueArrayElement =>
+          model.hydrate(cachedValueArrayElement)
+        )
+    }
+  }
+}
+
 export const createCachingMethods = ({ collection, model, cache }) => {
+  const {
+    serializeDocument,
+    deserializeDocument,
+    serializeDocuments,
+    deserializeDocuments
+  } = getSerializer(model)
+
   const loader = new DataLoader(async ejsonArray => {
     const fieldsArray = ejsonArray.map(EJSON.parse)
     log('fieldsArray', fieldsArray)
@@ -156,7 +189,7 @@ export const createCachingMethods = ({ collection, model, cache }) => {
       const cacheDoc = await cache.get(cacheKey)
       log('findOneById found in cache:', cacheDoc)
       if (cacheDoc) {
-        return EJSON.parse(cacheDoc)
+        return deserializeDocument(cacheDoc)
       }
 
       log(`Dataloader.load: ${EJSON.stringify({ _id })}`)
@@ -164,7 +197,7 @@ export const createCachingMethods = ({ collection, model, cache }) => {
       log('Dataloader.load returned: ', docs)
       if (Number.isInteger(ttl)) {
         // https://github.com/apollographql/apollo-server/tree/master/packages/apollo-server-caching#apollo-server-caching
-        cache.set(cacheKey, EJSON.stringify(docs[0]), { ttl })
+        cache.set(cacheKey, serializeDocument(docs[0]), { ttl })
       }
 
       return docs[0]
@@ -178,7 +211,7 @@ export const createCachingMethods = ({ collection, model, cache }) => {
 
       const cacheDoc = await cache.get(cacheKey)
       if (cacheDoc) {
-        return EJSON.parse(cacheDoc)
+        return deserializeDocuments(cacheDoc)
       }
 
       const fieldNames = Object.keys(cleanedFields)
@@ -201,7 +234,7 @@ export const createCachingMethods = ({ collection, model, cache }) => {
 
       if (Number.isInteger(ttl)) {
         // https://github.com/apollographql/apollo-server/tree/master/packages/apollo-server-caching#apollo-server-caching
-        cache.set(cacheKey, EJSON.stringify(docs), { ttl })
+        cache.set(cacheKey, serializeDocuments(docs), { ttl })
       }
 
       return docs
