@@ -1,23 +1,16 @@
 declare module 'apollo-datasource-mongodb' {
   import { DataSource } from 'apollo-datasource'
-  import { Collection as MongoCollection, ObjectId } from 'mongodb'
+  import { Collection as MongoCollection, ObjectId, Document } from 'mongodb'
   import {
     Collection as MongooseCollection,
-    Document,
     Model as MongooseModel,
   } from 'mongoose'
 
-  export type Collection<T, U = MongoCollection<T>> = T extends Document
-    ? MongooseCollection
-    : U
+  export type Collection<T, U = MongoCollection> = T extends Document ? U : MongooseCollection
 
-  export type Model<T, U = MongooseModel<T>> = T extends Document
-    ? U
-    : undefined
+  export type Model<T, U = MongooseModel<T>> = U
 
-  export type ModelOrCollection<T, U = Model<T>> = T extends Document
-    ? U
-    : Collection<T>
+  export type ModelOrCollection<T, U = Model<T>> = U | Collection<T>
 
   export interface Fields {
     [fieldName: string]:
