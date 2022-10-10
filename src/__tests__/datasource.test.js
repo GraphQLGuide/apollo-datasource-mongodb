@@ -49,6 +49,8 @@ describe('Mongoose', () => {
   let userCollection
   let alice
   let nestedBob
+  let nestedCharlie
+  let nestedDan
 
   beforeAll(async () => {
     const userSchema = new Schema({ name: 'string' })
@@ -64,7 +66,28 @@ describe('Mongoose', () => {
 
     nestedBob = await userCollection.findOneAndReplace(
       { name: 'Bob' },
-      { name: 'Bob', nested: { _id: objectID, field1: 'value1', field2: '' } },
+      {
+        name: 'Bob',
+        nested: { _id: objectID, field1: 'value1', field2: 'value1' }
+      },
+      { new: true, upsert: true }
+    )
+
+    nestedCharlie = await userCollection.findOneAndReplace(
+      { name: 'Charlie' },
+      {
+        name: 'Charlie',
+        nested: { field1: 'value2', field2: 'value2' }
+      },
+      { new: true, upsert: true }
+    )
+
+    nestedDan = await userCollection.findOneAndReplace(
+      { name: 'Dan' },
+      {
+        name: 'Dan',
+        nested: { field1: 'value1', field2: 'value2' }
+      },
       { new: true, upsert: true }
     )
   })
@@ -130,9 +153,94 @@ describe('Mongoose', () => {
     expect(user.name).toBe('Bob')
 
     const res1 = await users.findByFields({ 'nested.field1': 'value1' })
-    const res2 = await users.findByFields({ 'nested.field2': 'value1' })
-
+    const res2 = await users.findByFields({ 'nested.field2': '' })
     expect(res1[0].name).toBe('Bob')
     expect(res2[0]).toBeUndefined()
+  })
+
+  test('nested findByFields with single filter and batching', async () => {
+    const users = new Users(userCollection)
+    users.initialize()
+
+    let pendingDocs = []
+    for (var i = 1; i <= 3; i++) {
+      pendingDocs.push(users.findByFields({ 'nested.field1': `value${i}` }))
+    }
+
+    /* 
+        Intent here, with Promise.All, is to force batching to happen in the underlying dataloader library.
+        
+        This results in the following optimized filter to be passed to MongoDb:
+      
+        filter:  {
+         'nested.field1': { '$in': [ 'value1', 'value2', 'value3' ] }
+        }
+
+        This in turn correctly matches Bob, Charlie and Dan records.
+
+        Bob and Dan match filters passed to the first invocation of findByFields function: { 'nested.field1': [ 'value1' ] }
+
+        Charlie matches filters passed to the second invocation of findByFields function: { 'nested.field1': [ 'value2' ] }
+      */
+
+    const docs = await Promise.all(pendingDocs)
+
+    expect(docs[0][0].name).toBe('Bob')
+    expect(docs[0][1].name).toBe('Dan')
+    expect(docs[0].length).toBe(2)
+
+    expect(docs[1][0].name).toBe('Charlie')
+    expect(docs[1].length).toBe(1)
+
+    expect(docs[2][0]).toBeUndefined()
+    expect(docs[2].length).toBe(0)
+
+    expect(docs.length).toBe(3)
+  })
+
+  test('nested findByFields with multiple filters and batching', async () => {
+    const users = new Users(userCollection)
+    users.initialize()
+
+    let pendingDocs = []
+    for (var i = 1; i <= 3; i++) {
+      pendingDocs.push(
+        users.findByFields({
+          'nested.field1': `value${i}`,
+          'nested.field2': `value${i}`
+        })
+      )
+    }
+
+    /* 
+        Intent here, with Promise.All,  is to force batching to happen in the underlying dataloader library.
+        This results in the following optimized filter to be passed to MongoDb:
+      
+        filter:  {
+         'nested.field1': { '$in': [ 'value1', 'value2', 'value3' ] },
+         'nested.field2': { '$in': [ 'value1', 'value2', 'value3' ] }
+        }
+
+        This in turn correctly matches Bob, Charlie and Dan records.
+
+        However, only Bob and Charlie match original filters passed to findByFields function, so only those should be returned.
+
+        { 'nested.field1': [ 'value1' ], 'nested.field2': [ 'value1' ] },
+        { 'nested.field1': [ 'value2' ], 'nested.field2': [ 'value2' ] }
+
+      */
+
+    const docs = await Promise.all(pendingDocs)
+
+    expect(docs[0][0].name).toBe('Bob')
+    expect(docs[0].length).toBe(1)
+
+    expect(docs[1][0].name).toBe('Charlie')
+    expect(docs[1].length).toBe(1)
+
+    expect(docs[2][0]).toBeUndefined()
+    expect(docs[2].length).toBe(0)
+
+    expect(docs.length).toBe(3)
   })
 })
