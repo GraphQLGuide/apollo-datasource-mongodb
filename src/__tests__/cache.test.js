@@ -20,11 +20,19 @@ const docs = {
   one: {
     _id: objectID,
     foo: 'bar',
-    tags: ['foo', 'bar']
+    tags: ['foo', 'bar'],
+    nested: {
+      field1: 'one',
+      field2: 'two'
+    }
   },
   two: {
     _id: ObjectId(),
-    foo: 'bar'
+    foo: 'bar',
+    nested: {
+      field1: 'two',
+      field2: 'one'
+    }
   },
   three: {
     nested: {
@@ -214,6 +222,30 @@ describe('createCachingMethods', () => {
     expect(collection.find.mock.calls.length).toBe(1)
   })
 
+  it(`doesn't mix results of pending calls using nested field filters with differing values`, async () => {
+    const pendingDocs1 = api.findByFields({
+      'nested.field1': 'one',
+      'nested.field2': 'two'
+    })
+    const pendingDocs2 = api.findByFields({
+      'nested.field1': 'two',
+      'nested.field2': 'one'
+    })
+
+    const [foundDocs1, foundDocs2] = await Promise.all([
+      pendingDocs1,
+      pendingDocs2
+    ])
+
+    expect(foundDocs1[0]).toBe(docs.one)
+    expect(foundDocs1.length).toBe(1)
+    expect(foundDocs2[0]).toBe(docs.two)
+    expect(foundDocs2.length).toBe(1)
+
+    expect(collection.find.mock.calls.length).toBe(1)
+    console.log(collection.find.mock.calls[0])
+  })
+
   it(`dataloader caches each value individually when finding by a single field`, async () => {
     await api.findByFields({ tags: ['foo', 'baz'] }, { ttl: 1 })
 
@@ -318,12 +350,14 @@ describe('isValidObjectIdString', () => {
 describe('getNestedValue', () => {
   it('works', () => {
     const obj = {
-      nested: { foo: 'bar', fooB: '', fooC: null, fooE: { inner: true } }
+      nested: { foo: 'bar', fooB: '', fooC: null, fooE: { inner: true } },
+      ['top.level']: 'baz'
     }
     expect(getNestedValue(obj, 'nested.foo')).toEqual('bar')
     expect(getNestedValue(obj, 'nested.fooB')).toEqual('')
     expect(getNestedValue(obj, 'nested.fooC')).toEqual(null)
     expect(getNestedValue(obj, 'nested.fooD')).toBeUndefined()
     expect(getNestedValue(obj, 'nested.fooE.inner')).toBe(true)
+    expect(getNestedValue(obj, 'top.level')).toBe('baz')
   })
 })

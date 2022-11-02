@@ -46,7 +46,13 @@ export function prepFields(fields) {
 
 // getNestedValue({ nested: { foo: 'bar' } }, 'nested.foo')
 // => 'bar'
+// getNestedValue({ 'top.level': value }, 'top.level')
+// => 'value'
 export function getNestedValue(object, string) {
+  if (string in object) {
+    return object[string]
+  }
+
   string = string.replace(/\[(\w+)\]/g, '.$1') // convert indexes to properties
   string = string.replace(/^\./, '') // strip a leading dot
   var a = string.split('.')
@@ -76,7 +82,8 @@ const orderDocs = (fieldsArray, docs) =>
           ? fieldValue.map(val => idToString(val))
           : [idToString(fieldValue)]
 
-        const docValue = doc[fieldName]
+        const docValue = getNestedValue(doc, fieldName)
+
         const docValuesArr = Array.isArray(docValue)
           ? docValue.map(val => idToString(val))
           : [idToString(docValue)]
