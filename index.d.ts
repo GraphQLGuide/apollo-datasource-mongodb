@@ -1,5 +1,5 @@
 declare module 'apollo-datasource-mongodb' {
-  import { DataSource } from 'apollo-datasource'
+  import { KeyValueCache } from '@apollo/utils.keyvaluecache'
   import { Collection as MongoCollection, ObjectId } from 'mongodb'
   import {
     Collection as MongooseCollection,
@@ -32,14 +32,16 @@ declare module 'apollo-datasource-mongodb' {
     ttl: number
   }
 
-  export class MongoDataSource<TData, TContext = any> extends DataSource<
-    TContext
-  > {
-    protected context: TContext
+  export interface MongoDataSourceConfig<TData> {
+    modelOrCollection: ModelOrCollection<TData>
+    cache?: KeyValueCache<TData>
+  }
+
+  export class MongoDataSource<TData> {
     protected collection: Collection<TData>
     protected model: Model<TData>
 
-    constructor(modelOrCollection: ModelOrCollection<TData>)
+    constructor(options: MongoDataSourceConfig<TData>)
 
     findOneById(
       id: ObjectId | string,
