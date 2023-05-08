@@ -6,7 +6,7 @@ This is a forked repository from [apollo-datasource-mongodb](https://github.com/
 some changes made to data sources in Apollo Server 4. The package this is forking uses Apollo Server 3 conventions. I updated the `MongoDataSource` class
 in this package to be compliant with Apollo Server 4 data sources. See [dataSources](https://www.apollographql.com/docs/apollo-server/migration/#datasources) for more information.
 
-### Installation
+**Installation**
 ```
 npm i apollo-mongo-datasource
 ```
@@ -159,8 +159,7 @@ class Context {
 
 const { url } = await startStandaloneServer(server, {
   context: async ({ req }) => {
-    const context = new Context(req)
-    return context
+    return new Context(req)
   },
 });
 ```
@@ -375,8 +374,7 @@ const server = new ApolloServer({
 
 const { url } = await startStandaloneServer(server, {
   context: async ({ req }) => {
-    const context = new Context(req)
-    return context
+    return new Context(req)
   },
 });
 ```
