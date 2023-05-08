@@ -2,6 +2,10 @@
 
 MongoDB [data source](https://www.apollographql.com/docs/apollo-server/data/fetching-data) for Apollo Server 4
 
+- This is a forked repository from [apollo-datasource-mongodb](https://github.com/GraphQLGuide/apollo-datasource-mongodb) which implemented
+some changes made to data sources in Apollo Server 4. The package this is forking uses Apollo Server 3 conventions. I updated the `MongoDataSource` class
+in this package to be compliant with Apollo Server 4 data sources. See [dataSources](https://www.apollographql.com/docs/apollo-server/migration/#datasources) for more information.
+
 ```
 npm i apollo-mongo-datasource
 ```
@@ -77,7 +81,51 @@ const { url } = await startStandaloneServer(server, {
 })
 ```
 
-Inside the data source, the collection is available at `this.collection` (e.g. `this.collection.update({_id: 'foo, { $set: { name: 'me' }}})`). The model (if you're using Mongoose) is available at `this.model` (`new this.model({ name: 'Alice' })`). In Apollo Server 3, the context was automatically handled by the abstract DataSource class from apollo-datasource. This package has been deprecated, so the DataSource class has been removed from this package, as well as the initialize method. By default, the API classes you create will not have access to the context. You can either choose to add the data that your API class needs as private members of the class, or you can add the entire context as a member of the class if you wish. All you need to do is add the field to the options argument of the constructor and call super. Then, the request's context is available at `this.context`. For example, if you put the logged-in user's ID on context as `context.currentUserId`:
+Inside the data source, the collection is available at `this.collection` (e.g. `this.collection.update({_id: 'foo, { $set: { name: 'me' }}})`). The model (if you're using Mongoose) is available at `this.model` (`new this.model({ name: 'Alice' })`). In Apollo Server 3, the context was automatically handled by the abstract `DataSource` class from apollo-datasource. This package has been deprecated, so the `DataSource` class has been removed from this package, as well as the initialize method. 
+
+By default, the API classes you create will not have access to the context. You can either choose to add the data that your API class needs on a case-by-case basis as members of the class, or you can add the entire context as a member of the class if you wish. All you need to do is add the field(s) to the options argument of the constructor and call super passing in options. Then, the request's context is available at `this.context`. For example, if you put the logged-in user's ID on context as `context.currentUserId` and you want your Users class to have access to `currentUserId`:
+
+```js
+class Users extends MongoDataSource {
+  constructor(options) {
+    super(options)
+    this.currentUserId = options.currentUserId
+  }
+
+  async getPrivateUserData(userId) {
+    const isAuthorized = this.currentUserId === userId
+    if (isAuthorized) {
+      const user = await this.findOneById(userId)
+      return user && user.privateData
+    }
+  }
+}
+```
+
+and you would instantiate the Users data source in the context like this
+
+```js
+...
+const server = new ApolloServer({
+  typeDefs,
+  resolvers
+})
+
+const { url } = await startStandaloneServer(server, {
+  context: async ({ req }) => {
+    const currentUserId = getCurrentUserId(req) // not a real function, for demo purposes only
+    return {
+      currentUserId,
+      dataSources: {
+        users: new Users({ modelOrCollection: UserModel, currentUserId })
+      },
+    }
+  },
+});
+```
+
+If you want your data source to have access to the entire context at `this.context`, you need to create a `Context` class so the context can refer to itself as `this` in the constructor for the data source.
+See [dataSources](https://www.apollographql.com/docs/apollo-server/migration/#datasources) for more information regarding how data sources changed from Apollo Server 3 to Apollo Server 4.
 
 ```js
 class Users extends MongoDataSource {
@@ -94,39 +142,26 @@ class Users extends MongoDataSource {
     }
   }
 }
-```
 
-and you would instantiate the Users class like this
-
-```js
 ...
-const server = new ApolloServer({
-  typeDefs,
-  resolvers
-})
 
-const { url } = await startStandaloneServer(server, {
-  context: async ({ req }) => ({
-    dataSources: {
-      users: new Users({ modelOrCollection: UserModel, context: { currentUserId: '123' } })
-    }
-  }),
-});
-```
-
-If you want your data source to have access to the entire context, you need to create a Context class so the context can refer to itself as this in the constructor for the data source.
-See [dataSources](https://www.apollographql.com/docs/apollo-server/migration/#datasources) for more information regarding how data sources changed from Apollo Server 3 to Apollo Server 4.
-
-```js
 class Context {
-  constructor() {
+  constructor(req) {
+    this.currentUserId = getCurrentUserId(req), // not a real function, for demo purposes only
     this.dataSources = {
       users: new Users({ modelOrCollection: UserModel, context: this })
     },
-    this.currentUserId = '123',
-    ...
   }
 }
+
+...
+
+const { url } = await startStandaloneServer(server, {
+  context: async ({ req }) => {
+    const context = new Context(req)
+    return context
+  },
+});
 ```
 
 If you're passing a Mongoose model rather than a collection, Mongoose will be used for data fetching. All transformations defined on that model (virtuals, plugins, etc.) will be applied to your data before caching, just like you would expect it. If you're using reference fields, you might be interested in checking out [mongoose-autopopulate](https://www.npmjs.com/package/mongoose-autopopulate).
@@ -229,7 +264,6 @@ interface UserDocument {
   interests: [string]
 }
 
-// This is optional
 interface Context {
   loggedInUser: UserDocument
 }
@@ -280,7 +314,7 @@ const { url } = await startStandaloneServer(server, {
 
 You can also opt to pass the entire context into your data source class. You can do so by adding a protected context member 
 to your data source class and modifying to options argument of the constructor to add a field for the context. Then, call super and
-assign the context to the member field on your data source class.
+assign the context to the member field on your data source class. Note: context needs to be a class in order to do this.
 
 ```ts
 import { MongoDataSource } from 'apollo-mongo-datasource'
@@ -294,9 +328,16 @@ interface UserDocument {
   interests: [string]
 }
 
-// This is optional
-interface Context {
-  loggedInUser: UserDocument
+class Context {
+  loggedInUser: UserDocument;
+  dataSources: any;
+
+  constructor(req: any) {
+    this.loggedInUser = getLoggedInUser(req);
+    this.dataSources = {
+      users: new Users({ modelOrCollection: client.db().collection('users'), context: this }),
+    };
+  }
 }
 
 export default class Users extends MongoDataSource<UserDocument, Context> {
@@ -310,7 +351,7 @@ export default class Users extends MongoDataSource<UserDocument, Context> {
   getUser(userId) {
     // this.context has type `Context` as defined above
     // this.findOneById has type `(id: ObjectId) => Promise<UserDocument | null | undefined>`
-    return this.findOneById(userId)
+    return this.findOneById(userId);
   }
 }
 ```
@@ -332,13 +373,8 @@ const server = new ApolloServer({
 
 const { url } = await startStandaloneServer(server, {
   context: async ({ req }) => {
-    const loggedInUser = getLoggedInUser(req); // this function does not exist, just for demo purposes
-    return {
-      loggedInUser,
-      dataSources: {
-        users: new Users({ modelOrCollection: client.db().collection('users'), context: this })
-      },
-    };
+    const context = new Context(req);
+    return context;
   },
 });
 ```
