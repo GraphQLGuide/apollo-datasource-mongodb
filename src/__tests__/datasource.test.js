@@ -4,13 +4,13 @@ import mongoose, { Schema, model } from 'mongoose'
 import { MongoDataSource } from '../datasource'
 import { isModel, isCollectionOrModel, getCollection } from '../helpers'
 
-class Users extends MongoDataSource {
-  // context;
+mongoose.set('useFindAndModify', false)
 
-  // constructor(options) {
-  //   super(options)
-  //   this.context = options.context
-  // }
+class Users extends MongoDataSource {
+  constructor(options) {
+    super(options)
+    this.context = options.context
+  }
 }
 
 describe('MongoDataSource', () => {
@@ -131,5 +131,19 @@ describe('Mongoose', () => {
 
     expect(res1[0].name).toBe('Bob')
     expect(res2[0]).toBeUndefined()
+  })
+
+  test('Data Source with Context', async () => {
+    const users = new Users({ modelOrCollection: UserModel, context: { token: '123' }})
+    
+    expect(users.context.token).toBe('123')
+  })
+
+  test('Data Source with Context that contains a User', async () => {
+    const users = new Users({ modelOrCollection: userCollection, context: { user: alice }})
+    const user = await users.findOneById(alice._id)
+
+    expect(user.name).toBe('Alice')
+    expect(users.context.user.name).toBe(user.name)
   })
 })
