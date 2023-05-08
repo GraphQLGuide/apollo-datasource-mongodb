@@ -1,6 +1,6 @@
 {
   "name": "apollo-mongo-datasource",
-  "version": "0.5.4",
+  "version": "1.0.0",
   "description": "MongoDB data source for Apollo Server 4",
   "main": "dist/index.js",
   "types": "index.d.ts",
