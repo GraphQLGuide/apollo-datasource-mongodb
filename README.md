@@ -248,7 +248,7 @@ Here we also call [`deleteFromCacheById()`](#deletefromcachebyid) to remove the 
 
 ### TypeScript
 
-Since we are using a typed language, we want the provided methods to be correctly typed as well. This requires us to make the `MongoDataSource` class polymorphic. It requires 1-2 template arguments. The first argument is the type of the document in our collection. The second argument is the type of context in our GraphQL server, which defaults to `any`. We can choose to either pass the necessary data from context to the data source by field, or give the data source class access to the entire context. For example:
+Since we are using a typed language, we want the provided methods to be correctly typed as well. This requires us to make the `MongoDataSource` class polymorphic. It requires 1-2 template arguments. The first argument is the type of the document in our collection. The optional second argument is the type of context in our GraphQL server, which defaults to `any`. You can choose to either pass the necessary data from context to the data source by field, or give the data source class access to the entire context. For example:
 
 `data-sources/Users.ts`
 
