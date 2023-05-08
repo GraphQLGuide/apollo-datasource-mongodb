@@ -1,4 +1,4 @@
-declare module 'apollo-datasource-mongodb' {
+declare module 'apollo-mongo-datasource' {
   import { KeyValueCache } from '@apollo/utils.keyvaluecache'
   import { Collection as MongoCollection, ObjectId } from 'mongodb'
   import {
@@ -32,7 +32,7 @@ declare module 'apollo-datasource-mongodb' {
     ttl: number
   }
 
-  export interface MongoDataSourceConfig<TData> {
+  export interface MongoDataSourceConfig<TData, TContext = any> {
     modelOrCollection: ModelOrCollection<TData>
     cache?: KeyValueCache<TData>
   }
