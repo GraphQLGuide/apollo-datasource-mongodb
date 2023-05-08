@@ -1,7 +1,7 @@
 {
-  "name": "apollo-datasource-mongodb",
+  "name": "apollo-mongo-datasource",
   "version": "0.5.4",
-  "description": "Apollo data source for MongoDB",
+  "description": "MongoDB data source for Apollo Server 4",
   "main": "dist/index.js",
   "types": "index.d.ts",
   "scripts": {
@@ -17,9 +17,8 @@
     "node": ">=8"
   },
   "dependencies": {
+    "@apollo/utils.keyvaluecache": "^3.0.0",
     "@types/mongodb": "^3.5.27",
-    "apollo-datasource": "^0.3.1",
-    "apollo-server-caching": "^0.3.1",
     "apollo-server-errors": "^2.4.1",
     "bson": "^4.1.0",
     "dataloader": "^1.4.0"
@@ -40,16 +39,16 @@
     "release": "^6.3.0",
     "waait": "^1.0.5"
   },
-  "homepage": "https://github.com/GraphQLGuide/apollo-datasource-mongodb",
+  "homepage": "https://github.com/nnoce14/apollo-mongo-datasource",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/GraphQLGuide/apollo-datasource-mongodb"
+    "url": "git+https://github.com/nnoce14/apollo-mongo-datasource"
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/GraphQLGuide/apollo-datasource-mongodb/issues"
+    "url": "https://github.com/nnoce14/apollo-mongo-datasource/issues"
   },
-  "author": "Loren Sands-Ramshaw <loren@graphql.guide> (https://graphql.guide)",
+  "author": "Nick Noce <nnoce12@gmail.com>",
   "keywords": [
     "apollo",
     "datasource",
