@@ -1,20 +1,20 @@
 [![npm version](https://badge.fury.io/js/apollo-datasource-mongodb.svg)](https://www.npmjs.com/package/apollo-datasource-mongodb)
 
-Apollo [data source](https://www.apollographql.com/docs/apollo-server/features/data-sources) for MongoDB
+MongoDB [data source](https://www.apollographql.com/docs/apollo-server/data/fetching-data) for Apollo Server 4
 
 ```
-npm i apollo-datasource-mongodb
+npm i apollo-mongo-datasource
 ```
 
-This package uses [DataLoader](https://github.com/graphql/dataloader) for batching and per-request memoization caching. It also optionally (if you provide a `ttl`) does shared application-level caching (using either the default Apollo `InMemoryLRUCache` or the [cache you provide to ApolloServer()](https://www.apollographql.com/docs/apollo-server/features/data-sources#using-memcachedredis-as-a-cache-storage-backend)). It does this for the following methods:
+This package uses [DataLoader](https://github.com/graphql/dataloader) for batching and per-request memoization caching. It also optionally (if you provide a `ttl`) does shared application-level caching (using either the default Apollo `InMemoryLRUCache` or the [cache you provide to ApolloServer()](https://www.apollographql.com/docs/apollo-server/performance/cache-backends#configuring-external-caching)). It does this for the following methods:
 
 - [`findOneById(id, options)`](#findonebyid)
 - [`findManyByIds(ids, options)`](#findmanybyids)
 - [`findByFields(fields, options)`](#findbyfields)
 
-
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
 **Contents:**
 
 - [Usage](#usage)
@@ -31,7 +31,6 @@ This package uses [DataLoader](https://github.com/graphql/dataloader) for batchi
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-
 ## Usage
 
 ### Basic
@@ -41,7 +40,7 @@ The basic setup is subclassing `MongoDataSource`, passing your collection or Mon
 `data-sources/Users.js`
 
 ```js
-import { MongoDataSource } from 'apollo-datasource-mongodb'
+import { MongoDataSource } from 'apollo-mongo-datasource'
 
 export default class Users extends MongoDataSource {
   getUser(userId) {
@@ -54,6 +53,8 @@ and:
 
 ```js
 import { MongoClient } from 'mongodb'
+import { ApolloServer } from '@apollo/server'
+import { startStandaloneServer } from '@apollo/server/standalone'
 
 import Users from './data-sources/Users.js'
 
@@ -62,20 +63,28 @@ client.connect()
 
 const server = new ApolloServer({
   typeDefs,
-  resolvers,
-  dataSources: () => ({
-    users: new Users(client.db().collection('users'))
-    // OR
-    // users: new Users(UserModel)
-  })
+  resolvers
+})
+
+const { url } = await startStandaloneServer(server, {
+  context: async ({ req }) => ({
+    dataSources: {
+      users: new Users({ modelOrCollection: client.db().collection('users') })
+      // OR
+      // users: new Users({ modelOrCollection: UserModel })
+    }
+  }),
 })
 ```
 
-Inside the data source, the collection is available at `this.collection` (e.g. `this.collection.update({_id: 'foo, { $set: { name: 'me' }}})`). The model (if you're using Mongoose) is available at `this.model` (`new this.model({ name: 'Alice' })`). The request's context is available at `this.context`. For example, if you put the logged-in user's ID on context as `context.currentUserId`:
+Inside the data source, the collection is available at `this.collection` (e.g. `this.collection.update({_id: 'foo, { $set: { name: 'me' }}})`). The model (if you're using Mongoose) is available at `this.model` (`new this.model({ name: 'Alice' })`). In Apollo Server 3, the context was automatically handled by the abstract DataSource class from apollo-datasource. This package has been deprecated, so the DataSource class has been removed from this package, as well as the initialize method. By default, the API classes you create will not have access to the context. You can either choose to add the data that your API class needs as private members of the class, or you can add the entire context as a member of the class if you wish. All you need to do is add the field to the options argument of the constructor and call super. Then, the request's context is available at `this.context`. For example, if you put the logged-in user's ID on context as `context.currentUserId`:
 
 ```js
 class Users extends MongoDataSource {
-  ...
+  constructor(options) {
+    super(options)
+    this.context = options.context
+  }
 
   async getPrivateUserData(userId) {
     const isAuthorized = this.context.currentUserId === userId
@@ -87,12 +96,34 @@ class Users extends MongoDataSource {
 }
 ```
 
-If you want to implement an initialize method, it must call the parent method:
+and you would instantiate the Users class like this
 
 ```js
-class Users extends MongoDataSource {
-  initialize(config) {
-    super.initialize(config)
+...
+const server = new ApolloServer({
+  typeDefs,
+  resolvers
+})
+
+const { url } = await startStandaloneServer(server, {
+  context: async ({ req }) => ({
+    dataSources: {
+      users: new Users({ modelOrCollection: UserModel, context: { currentUserId: '123' } })
+    }
+  }),
+});
+```
+
+If you want your data source to have access to the entire context, you need to create a Context class so the context can refer to itself as this in the constructor for the data source.
+See [dataSources](https://www.apollographql.com/docs/apollo-server/migration/#datasources) for more information regarding how data sources changed from Apollo Server 3 to Apollo Server 4.
+
+```js
+class Context {
+  constructor() {
+    this.dataSources = {
+      users: new Users({ modelOrCollection: UserModel, context: this })
+    },
+    this.currentUserId = '123',
     ...
   }
 }
@@ -119,7 +150,8 @@ class Posts extends MongoDataSource {
 
 const resolvers = {
   Post: {
-    author: (post, _, { dataSources: { users } }) => users.getUser(post.authorId)
+    author: (post, _, { dataSources: { users } }) =>
+      users.getUser(post.authorId)
   },
   User: {
     posts: (user, _, { dataSources: { posts } }) => posts.getPosts(user.postIds)
@@ -128,11 +160,16 @@ const resolvers = {
 
 const server = new ApolloServer({
   typeDefs,
-  resolvers,
-  dataSources: () => ({
-    users: new Users(db.collection('users')),
-    posts: new Posts(db.collection('posts'))
-  })
+  resolvers
+})
+
+const { url } = await startStandaloneServer(server, {
+  context: async ({ req }) => ({
+    dataSources: {
+      users: new Users({ modelOrCollection: db.collection('users') }),
+      posts: new Posts({ modelOrCollection: db.collection('posts') })
+    }
+  }),
 })
 ```
 
@@ -150,11 +187,14 @@ class Users extends MongoDataSource {
 
   updateUserName(userId, newName) {
     this.deleteFromCacheById(userId)
-    return this.collection.updateOne({
-      _id: userId
-    }, {
-      $set: { name: newName }
-    })
+    return this.collection.updateOne(
+      {
+        _id: userId
+      },
+      {
+        $set: { name: newName }
+      }
+    )
   }
 }
 
@@ -173,12 +213,12 @@ Here we also call [`deleteFromCacheById()`](#deletefromcachebyid) to remove the 
 
 ### TypeScript
 
-Since we are using a typed language, we want the provided methods to be correctly typed as well. This requires us to make the `MongoDataSource` class polymorphic. It requires 1-2 template arguments. The first argument is the type of the document in our collection. The second argument is the type of context in our GraphQL server, which defaults to `any`. For example:
+Since we are using a typed language, we want the provided methods to be correctly typed as well. This requires us to make the `MongoDataSource` class polymorphic. It requires 1-2 template arguments. The first argument is the type of the document in our collection. The second argument is the type of context in our GraphQL server, which defaults to `any`. We can choose to either pass the necessary data from context to the data source by field, or give the data source class access to the entire context. For example:
 
 `data-sources/Users.ts`
 
 ```ts
-import { MongoDataSource } from 'apollo-datasource-mongodb'
+import { MongoDataSource } from 'apollo-mongo-datasource'
 import { ObjectId } from 'mongodb'
 
 interface UserDocument {
@@ -195,6 +235,78 @@ interface Context {
 }
 
 export default class Users extends MongoDataSource<UserDocument, Context> {
+  protected loggedInUser: UserDocument;
+
+  constructor(options: { loggedInUser: UserDocument } & MongoDataSourceConfig<TData>) {
+    super(options);
+    this.loggedInUser = options.loggedInUser;
+  }
+
+  getUser(userId) {
+    // this.loggedInUser has type `UserDocument` as defined above
+    // this.findOneById has type `(id: ObjectId) => Promise<UserDocument | null | undefined>`
+    return this.findOneById(userId)
+  }
+}
+```
+
+and:
+
+```ts
+import { MongoClient } from 'mongodb'
+
+import Users from './data-sources/Users.ts'
+
+const client = new MongoClient('mongodb://localhost:27017/test')
+client.connect()
+
+const server = new ApolloServer({
+  typeDefs,
+  resolvers
+})
+
+const { url } = await startStandaloneServer(server, {
+  context: async ({ req }) => {
+    const loggedInUser = getLoggedInUser(req); // this function does not exist, just for demo purposes
+    return {
+      loggedInUser,
+      dataSources: {
+        users: new Users({ modelOrCollection: client.db().collection('users'), loggedInUser})
+      },
+    };
+  },
+});
+```
+
+You can also opt to pass the entire context into your data source class. You can do so by adding a protected context member 
+to your data source class and modifying to options argument of the constructor to add a field for the context. Then, call super and
+assign the context to the member field on your data source class.
+
+```ts
+import { MongoDataSource } from 'apollo-mongo-datasource'
+import { ObjectId } from 'mongodb'
+
+interface UserDocument {
+  _id: ObjectId
+  username: string
+  password: string
+  email: string
+  interests: [string]
+}
+
+// This is optional
+interface Context {
+  loggedInUser: UserDocument
+}
+
+export default class Users extends MongoDataSource<UserDocument, Context> {
+  protected context: Context;
+
+  constructor(options: { context: Context } & MongoDataSourceConfig<TData>) {
+    super(options);
+    this.context = options.context;
+  }
+
   getUser(userId) {
     // this.context has type `Context` as defined above
     // this.findOneById has type `(id: ObjectId) => Promise<UserDocument | null | undefined>`
@@ -215,14 +327,22 @@ client.connect()
 
 const server = new ApolloServer({
   typeDefs,
-  resolvers,
-  dataSources: () => ({
-    users: new Users(client.db().collection('users'))
-    // OR
-    // users: new Users(UserModel)
-  })
+  resolvers
 })
+
+const { url } = await startStandaloneServer(server, {
+  context: async ({ req }) => {
+    const loggedInUser = getLoggedInUser(req); // this function does not exist, just for demo purposes
+    return {
+      loggedInUser,
+      dataSources: {
+        users: new Users({ modelOrCollection: client.db().collection('users'), context: this })
+      },
+    };
+  },
+});
 ```
+
 
 ## API
 
@@ -293,3 +413,6 @@ Deletes a document from the cache that was fetched with `findOneById` or `findMa
 `this.deleteFromCacheByFields(fields)`
 
 Deletes a document from the cache that was fetched with `findByFields`. Fields should be passed in exactly the same way they were used to find with.
+
+## Forked and extended from
+- [The GraphQLGuide's Apollo data source for MongoDB](https://github.com/GraphQLGuide/apollo-datasource-mongodb)
