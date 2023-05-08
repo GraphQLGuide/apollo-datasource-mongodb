@@ -1,4 +1,4 @@
-import { InMemoryLRUCache } from 'apollo-server-caching'
+import { InMemoryLRUCache } from '@apollo/utils.keyvaluecache'
 import wait from 'waait'
 import { ObjectId } from 'mongodb'
 import { EJSON } from 'bson'
