@@ -2,10 +2,11 @@
 
 MongoDB [data source](https://www.apollographql.com/docs/apollo-server/data/fetching-data) for Apollo Server 4
 
-- This is a forked repository from [apollo-datasource-mongodb](https://github.com/GraphQLGuide/apollo-datasource-mongodb) which implemented
+This is a forked repository from [apollo-datasource-mongodb](https://github.com/GraphQLGuide/apollo-datasource-mongodb) that implemented
 some changes made to data sources in Apollo Server 4. The package this is forking uses Apollo Server 3 conventions. I updated the `MongoDataSource` class
 in this package to be compliant with Apollo Server 4 data sources. See [dataSources](https://www.apollographql.com/docs/apollo-server/migration/#datasources) for more information.
 
+### Installation
 ```
 npm i apollo-mongo-datasource
 ```
@@ -83,7 +84,7 @@ const { url } = await startStandaloneServer(server, {
 
 Inside the data source, the collection is available at `this.collection` (e.g. `this.collection.update({_id: 'foo, { $set: { name: 'me' }}})`). The model (if you're using Mongoose) is available at `this.model` (`new this.model({ name: 'Alice' })`). In Apollo Server 3, the context was automatically handled by the abstract `DataSource` class from apollo-datasource. This package has been deprecated, so the `DataSource` class has been removed from this package, as well as the initialize method. 
 
-By default, the API classes you create will not have access to the context. You can either choose to add the data that your API class needs on a case-by-case basis as members of the class, or you can add the entire context as a member of the class if you wish. All you need to do is add the field(s) to the options argument of the constructor and call super passing in options. Then, the request's context is available at `this.context`. For example, if you put the logged-in user's ID on context as `context.currentUserId` and you want your Users class to have access to `currentUserId`:
+By default, the API classes you create will not have access to the context. You can either choose to add the data that your API class needs on a case-by-case basis as members of the class, or you can add the entire context as a member of the class if you wish. All you need to do is add the field(s) to the options argument of the constructor and call super passing in options. For example, if you put the logged-in user's ID on context as `context.currentUserId` and you want your Users class to have access to `currentUserId`:
 
 ```js
 class Users extends MongoDataSource {
@@ -266,14 +267,15 @@ interface UserDocument {
 
 interface Context {
   loggedInUser: UserDocument
+  dataSources: any
 }
 
 export default class Users extends MongoDataSource<UserDocument, Context> {
-  protected loggedInUser: UserDocument;
+  protected loggedInUser: UserDocument
 
   constructor(options: { loggedInUser: UserDocument } & MongoDataSourceConfig<TData>) {
-    super(options);
-    this.loggedInUser = options.loggedInUser;
+    super(options)
+    this.loggedInUser = options.loggedInUser
   }
 
   getUser(userId) {
@@ -301,13 +303,13 @@ const server = new ApolloServer({
 
 const { url } = await startStandaloneServer(server, {
   context: async ({ req }) => {
-    const loggedInUser = getLoggedInUser(req); // this function does not exist, just for demo purposes
+    const loggedInUser = getLoggedInUser(req) // this function does not exist, just for demo purposes
     return {
       loggedInUser,
       dataSources: {
-        users: new Users({ modelOrCollection: client.db().collection('users'), loggedInUser})
+        users: new Users({ modelOrCollection: client.db().collection('users'), loggedInUser }),
       },
-    };
+    }
   },
 });
 ```
@@ -329,29 +331,29 @@ interface UserDocument {
 }
 
 class Context {
-  loggedInUser: UserDocument;
-  dataSources: any;
+  loggedInUser: UserDocument
+  dataSources: any
 
   constructor(req: any) {
-    this.loggedInUser = getLoggedInUser(req);
+    this.loggedInUser = getLoggedInUser(req)
     this.dataSources = {
       users: new Users({ modelOrCollection: client.db().collection('users'), context: this }),
-    };
+    }
   }
 }
 
 export default class Users extends MongoDataSource<UserDocument, Context> {
-  protected context: Context;
+  protected context: Context
 
   constructor(options: { context: Context } & MongoDataSourceConfig<TData>) {
-    super(options);
-    this.context = options.context;
+    super(options)
+    this.context = options.context
   }
 
   getUser(userId) {
     // this.context has type `Context` as defined above
     // this.findOneById has type `(id: ObjectId) => Promise<UserDocument | null | undefined>`
-    return this.findOneById(userId);
+    return this.findOneById(userId)
   }
 }
 ```
@@ -373,8 +375,8 @@ const server = new ApolloServer({
 
 const { url } = await startStandaloneServer(server, {
   context: async ({ req }) => {
-    const context = new Context(req);
-    return context;
+    const context = new Context(req)
+    return context
   },
 });
 ```
