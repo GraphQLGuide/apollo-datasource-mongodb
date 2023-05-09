@@ -7,7 +7,7 @@ declare module 'apollo-mongo-datasource' {
     Model as MongooseModel,
   } from 'mongoose'
 
-  export type Collection<T, U = MongoCollection<T>> = T extends Document
+  export type Collection<T extends { [key: string]: any }, U = MongoCollection<T>> = T extends Document
     ? MongooseCollection
     : U
 
@@ -15,7 +15,7 @@ declare module 'apollo-mongo-datasource' {
     ? U
     : undefined
 
-  export type ModelOrCollection<T, U = Model<T>> = T extends Document
+  export type ModelOrCollection<T extends { [key: string]: any }, U = Model<T>> = T extends Document
     ? U
     : Collection<T>
 
@@ -32,12 +32,12 @@ declare module 'apollo-mongo-datasource' {
     ttl: number
   }
 
-  export interface MongoDataSourceConfig<TData, TContext = any> {
+  export interface MongoDataSourceConfig<TData extends { [key: string]: any }> {
     modelOrCollection: ModelOrCollection<TData>
     cache?: KeyValueCache<TData>
   }
 
-  export class MongoDataSource<TData> {
+  export class MongoDataSource<TData extends { [key: string]: any }> {
     protected collection: Collection<TData>
     protected model: Model<TData>
 

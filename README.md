@@ -1,14 +1,10 @@
 <!-- [![npm version](https://badge.fury.io/js/apollo-datasource-mongodb.svg)](https://www.npmjs.com/package/apollo-datasource-mongodb) -->
 
-MongoDB [data source](https://www.apollographql.com/docs/apollo-server/data/fetching-data) for Apollo Server 4
-
-This is a forked repository from [apollo-datasource-mongodb](https://github.com/GraphQLGuide/apollo-datasource-mongodb) that implemented
-some changes made to data sources in Apollo Server 4. The package this is forking uses Apollo Server 3 conventions. I updated the `MongoDataSource` class
-in this package to be compliant with Apollo Server 4 data sources. See [dataSources](https://www.apollographql.com/docs/apollo-server/migration/#datasources) for more information.
+Apollo [data source](https://www.apollographql.com/docs/apollo-server/data/fetching-data) for MongoDB
 
 **Installation**
 ```
-npm i apollo-mongo-datasource
+npm i apollo-datasource-mongodb
 ```
 
 This package uses [DataLoader](https://github.com/graphql/dataloader) for batching and per-request memoization caching. It also optionally (if you provide a `ttl`) does shared application-level caching (using either the default Apollo `InMemoryLRUCache` or the [cache you provide to ApolloServer()](https://www.apollographql.com/docs/apollo-server/performance/cache-backends#configuring-external-caching)). It does this for the following methods:
@@ -82,9 +78,7 @@ const { url } = await startStandaloneServer(server, {
 })
 ```
 
-Inside the data source, the collection is available at `this.collection` (e.g. `this.collection.update({_id: 'foo, { $set: { name: 'me' }}})`). The model (if you're using Mongoose) is available at `this.model` (`new this.model({ name: 'Alice' })`). In Apollo Server 3, the context was automatically handled by the abstract `DataSource` class from apollo-datasource. This package has been deprecated, so the `DataSource` class has been removed from this package, as well as the initialize method. 
-
-By default, the API classes you create will not have access to the context. You can either choose to add the data that your API class needs on a case-by-case basis as members of the class, or you can add the entire context as a member of the class if you wish. All you need to do is add the field(s) to the options argument of the constructor and call super passing in options. For example, if you put the logged-in user's ID on context as `context.currentUserId` and you want your Users class to have access to `currentUserId`:
+Inside the data source, the collection is available at `this.collection` (e.g. `this.collection.update({_id: 'foo, { $set: { name: 'me' }}})`). The model (if you're using Mongoose) is available at `this.model` (`new this.model({ name: 'Alice' })`). By default, the API classes you create will not have access to the context. You can either choose to add the data that your API class needs on a case-by-case basis as members of the class, or you can add the entire context as a member of the class if you wish. All you need to do is add the field(s) to the options argument of the constructor and call super passing in options. For example, if you put the logged-in user's ID on context as `context.currentUserId` and you want your Users class to have access to `currentUserId`:
 
 ```js
 class Users extends MongoDataSource {
@@ -248,7 +242,7 @@ Here we also call [`deleteFromCacheById()`](#deletefromcachebyid) to remove the 
 
 ### TypeScript
 
-Since we are using a typed language, we want the provided methods to be correctly typed as well. This requires us to make the `MongoDataSource` class polymorphic. It requires 1-2 template arguments. The first argument is the type of the document in our collection. The optional second argument is the type of context in our GraphQL server, which defaults to `any`. You can choose to either pass the necessary data from context to the data source by field, or give the data source class access to the entire context. For example:
+Since we are using a typed language, we want the provided methods to be correctly typed as well. This requires us to make the `MongoDataSource` class polymorphic. It requires 1 template argument, which is the type of the document in our collection. If you wish to add additional fields to your data source class, you can extend the typing on constructor options argument to include any fields that you need. For example:
 
 `data-sources/Users.ts`
 
@@ -269,10 +263,10 @@ interface Context {
   dataSources: any
 }
 
-export default class Users extends MongoDataSource<UserDocument, Context> {
+export default class Users extends MongoDataSource<UserDocument> {
   protected loggedInUser: UserDocument
 
-  constructor(options: { loggedInUser: UserDocument } & MongoDataSourceConfig<TData>) {
+  constructor(options: { loggedInUser: UserDocument } & MongoDataSourceConfig<UserDocument>) {
     super(options)
     this.loggedInUser = options.loggedInUser
   }
@@ -341,10 +335,10 @@ class Context {
   }
 }
 
-export default class Users extends MongoDataSource<UserDocument, Context> {
+export default class Users extends MongoDataSource<UserDocument> {
   protected context: Context
 
-  constructor(options: { context: Context } & MongoDataSourceConfig<TData>) {
+  constructor(options: { context: Context } & MongoDataSourceConfig<UserDocument>) {
     super(options)
     this.context = options.context
   }
@@ -449,6 +443,3 @@ Deletes a document from the cache that was fetched with `findOneById` or `findMa
 `this.deleteFromCacheByFields(fields)`
 
 Deletes a document from the cache that was fetched with `findByFields`. Fields should be passed in exactly the same way they were used to find with.
-
-## Forked and extended from
-- [The GraphQLGuide's Apollo data source for MongoDB](https://github.com/GraphQLGuide/apollo-datasource-mongodb)
