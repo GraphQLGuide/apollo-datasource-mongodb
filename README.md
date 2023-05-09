@@ -1,4 +1,4 @@
-<!-- [![npm version](https://badge.fury.io/js/apollo-datasource-mongodb.svg)](https://www.npmjs.com/package/apollo-datasource-mongodb) -->
+[![npm version](https://badge.fury.io/js/apollo-datasource-mongodb.svg)](https://www.npmjs.com/package/apollo-datasource-mongodb)
 
 Apollo [data source](https://www.apollographql.com/docs/apollo-server/data/fetching-data) for MongoDB
 
