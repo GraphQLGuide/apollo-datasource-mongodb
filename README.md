@@ -41,7 +41,7 @@ The basic setup is subclassing `MongoDataSource`, passing your collection or Mon
 `data-sources/Users.js`
 
 ```js
-import { MongoDataSource } from 'apollo-mongo-datasource'
+import { MongoDataSource } from 'apollo-datasource-mongodb'
 
 export default class Users extends MongoDataSource {
   getUser(userId) {
@@ -247,7 +247,7 @@ Since we are using a typed language, we want the provided methods to be correctl
 `data-sources/Users.ts`
 
 ```ts
-import { MongoDataSource } from 'apollo-mongo-datasource'
+import { MongoDataSource } from 'apollo-datasource-mongodb'
 import { ObjectId } from 'mongodb'
 
 interface UserDocument {
@@ -312,7 +312,7 @@ to your data source class and modifying to options argument of the constructor t
 assign the context to the member field on your data source class. Note: context needs to be a class in order to do this.
 
 ```ts
-import { MongoDataSource } from 'apollo-mongo-datasource'
+import { MongoDataSource } from 'apollo-datasource-mongodb'
 import { ObjectId } from 'mongodb'
 
 interface UserDocument {
