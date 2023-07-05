@@ -1,4 +1,4 @@
-declare module 'apollo-mongo-datasource' {
+declare module 'apollo-datasource-mongodb' {
   import { KeyValueCache } from '@apollo/utils.keyvaluecache'
   import { Collection as MongoCollection, ObjectId } from 'mongodb'
   import {
