@@ -2,8 +2,8 @@
 
 Apollo [data source](https://www.apollographql.com/docs/apollo-server/features/data-sources) for MongoDB
 
-Note: This README applies to versions 0.5.4 and below, and it is meant to be paired with Apollo Server 3.
-See the [README]('README.md') for version 0.6.0, if you are using Apollo Server 4.
+Note: This README applies to versions 0.5.4 and below, and it is meant to be paired with Apollo Server 3.  
+See the [README](README.md) for version 0.6.0, if you are using Apollo Server 4.
 
 ```
 npm i apollo-datasource-mongodb
