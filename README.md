@@ -2,6 +2,9 @@
 
 Apollo [data source](https://www.apollographql.com/docs/apollo-server/data/fetching-data) for MongoDB
 
+Note: This README applies to the current version 0.6.0 and is meant to be paired with Apollo Server 4.
+See the old [README]('README.old.md') for versions 0.5.4 and below, if you are using Apollo Server 3.
+
 **Installation**
 ```
 npm i apollo-datasource-mongodb
