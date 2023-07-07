@@ -4,8 +4,6 @@ import mongoose, { Schema, model } from 'mongoose'
 import { MongoDataSource } from '../datasource'
 import { isModel, isCollectionOrModel, getCollection } from '../helpers'
 
-mongoose.set('useFindAndModify', false)
-
 class Users extends MongoDataSource {
   constructor(options) {
     super(options)
