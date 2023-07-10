@@ -14,7 +14,7 @@ import {
 import { log } from '../helpers'
 
 const hexId = '5cf82e14a220a607eb64a7d4'
-const objectID = ObjectId(hexId)
+const objectID = new ObjectId(hexId)
 
 const docs = {
   one: {
@@ -23,7 +23,7 @@ const docs = {
     tags: ['foo', 'bar']
   },
   two: {
-    _id: ObjectId(),
+    _id: new ObjectId(),
     foo: 'bar'
   },
   three: {
