@@ -2,14 +2,6 @@
 
 Apollo [data source](https://www.apollographql.com/docs/apollo-server/data/fetching-data) for MongoDB
 
-Note: This README applies to the current version 0.6.0 and is meant to be paired with Apollo Server 4.  
-See the old [README](README.old.md) for versions 0.5.4 and below, if you are using Apollo Server 3.
-
-**Installation**
-```
-npm i apollo-datasource-mongodb
-```
-
 This package uses [DataLoader](https://github.com/graphql/dataloader) for batching and per-request memoization caching. It also optionally (if you provide a `ttl`) does shared application-level caching (using either the default Apollo `InMemoryLRUCache` or the [cache you provide to ApolloServer()](https://www.apollographql.com/docs/apollo-server/performance/cache-backends#configuring-external-caching)). It does this for the following methods:
 
 - [`findOneById(id, options)`](#findonebyid)
@@ -19,9 +11,9 @@ This package uses [DataLoader](https://github.com/graphql/dataloader) for batchi
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-**Contents:**
-
+- [Compatibility](#compatibility)
 - [Usage](#usage)
+  - [Install](#install)
   - [Basic](#basic)
   - [Batching](#batching)
   - [Caching](#caching)
@@ -32,10 +24,24 @@ This package uses [DataLoader](https://github.com/graphql/dataloader) for batchi
   - [findByFields](#findbyfields)
     - [Examples](#examples)
   - [deleteFromCacheById](#deletefromcachebyid)
+  - [deleteFromCacheByFields](#deletefromcachebyfields)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
+## Compatibility
+
+| Apollo Server Version | `apollo-datasource-mongodb`                                                             |
+|-----------------------|-----------------------------------------------------------------------------------------|
+| 4.*                   | >= 0.6.0                                                                                |
+| 3.*                   | <= [0.5.4](https://github.com/GraphQLGuide/apollo-datasource-mongodb/tree/0.5.4#readme) |
+
 ## Usage
+
+### Install
+
+```
+npm i apollo-datasource-mongodb
+```
 
 ### Basic
 

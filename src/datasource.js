@@ -4,9 +4,8 @@ import { InMemoryLRUCache } from '@apollo/utils.keyvaluecache'
 import { createCachingMethods } from './cache'
 import { isCollectionOrModel, isModel } from './helpers'
 
-
 class MongoDataSource {
-  constructor({modelOrCollection, cache}) {
+  constructor({ modelOrCollection, cache }) {
     if (!isCollectionOrModel(modelOrCollection)) {
       throw new GraphQLError(
         'MongoDataSource constructor must be given a collection or Mongoose model'
