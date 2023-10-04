@@ -31,7 +31,7 @@
     "mongodb": "^5.7.0",
     "mongoose": "^7.3.2",
     "prettier": "^1.19.1",
-    "release": "^6.3.0",
+    "release": "^6.3.1",
     "waait": "^1.0.5"
   },
   "homepage": "https://github.com/GraphQLGuide/apollo-datasource-mongodb",
