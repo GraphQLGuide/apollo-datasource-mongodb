@@ -1,31 +1,24 @@
-import { DataSource } from 'apollo-datasource'
-import { ApolloError } from 'apollo-server-errors'
-import { InMemoryLRUCache } from 'apollo-server-caching'
+import { GraphQLError } from 'graphql'
+import { InMemoryLRUCache } from '@apollo/utils.keyvaluecache'
 
 import { createCachingMethods } from './cache'
 import { isCollectionOrModel, isModel } from './helpers'
 
-class MongoDataSource extends DataSource {
-  constructor(collection) {
-    super()
 
-    if (!isCollectionOrModel(collection)) {
-      throw new ApolloError(
+class MongoDataSource {
+  constructor({modelOrCollection, cache}) {
+    if (!isCollectionOrModel(modelOrCollection)) {
+      throw new GraphQLError(
         'MongoDataSource constructor must be given a collection or Mongoose model'
       )
     }
 
-    if (isModel(collection)) {
-      this.model = collection
+    if (isModel(modelOrCollection)) {
+      this.model = modelOrCollection
       this.collection = this.model.collection
     } else {
-      this.collection = collection
+      this.collection = modelOrCollection
     }
-  }
-
-  // https://github.com/apollographql/apollo-server/blob/master/packages/apollo-datasource/src/index.ts
-  initialize({ context, cache } = {}) {
-    this.context = context
 
     const methods = createCachingMethods({
       collection: this.collection,

@@ -4,19 +4,18 @@ import mongoose, { Schema, model } from 'mongoose'
 import { MongoDataSource } from '../datasource'
 import { isModel, isCollectionOrModel, getCollection } from '../helpers'
 
-mongoose.set('useFindAndModify', false)
-
 class Users extends MongoDataSource {
-  initialize(config) {
-    super.initialize(config)
+  constructor(options) {
+    super(options)
+    this.context = options.context
   }
 }
 
 describe('MongoDataSource', () => {
   it('sets up caching functions', () => {
     const users = {}
-    const source = new Users(users)
-    source.initialize()
+    const source = new Users({modelOrCollection: users})
+
     expect(source.findOneById).toBeDefined()
     expect(source.findByFields).toBeDefined()
     expect(source.deleteFromCacheById).toBeDefined()
@@ -42,7 +41,7 @@ const connect = async () => {
 }
 
 const hexId = '5cf82e14a220a607eb64a7d4'
-const objectID = ObjectId(hexId)
+const objectID = new ObjectId(hexId)
 
 describe('Mongoose', () => {
   let UserModel
@@ -103,17 +102,15 @@ describe('Mongoose', () => {
   })
 
   test('Data Source with Model', async () => {
-    const users = new Users(UserModel)
-    users.initialize()
+    const users = new Users({ modelOrCollection: UserModel })
     const user = await users.findOneById(alice._id)
+
     expect(user.name).toBe('Alice')
     expect(user.id).toBe(alice._id.toString())
   })
 
   test('Data Source with Collection', async () => {
-    const users = new Users(userCollection)
-    users.initialize()
-
+    const users = new Users({ modelOrCollection: userCollection})
     const user = await users.findOneById(alice._id)
 
     expect(user.name).toBe('Alice')
@@ -121,9 +118,7 @@ describe('Mongoose', () => {
   })
 
   test('nested findByFields', async () => {
-    const users = new Users(userCollection)
-    users.initialize()
-
+    const users = new Users({ modelOrCollection: userCollection })
     const [user] = await users.findByFields({ 'nested._id': objectID })
 
     expect(user).toBeDefined()
@@ -134,5 +129,19 @@ describe('Mongoose', () => {
 
     expect(res1[0].name).toBe('Bob')
     expect(res2[0]).toBeUndefined()
+  })
+
+  test('Data Source with Context', async () => {
+    const users = new Users({ modelOrCollection: UserModel, context: { token: '123' }})
+    
+    expect(users.context.token).toBe('123')
+  })
+
+  test('Data Source with Context that contains a User', async () => {
+    const users = new Users({ modelOrCollection: userCollection, context: { user: alice }})
+    const user = await users.findOneById(alice._id)
+
+    expect(user.name).toBe('Alice')
+    expect(users.context.user.name).toBe(user.name)
   })
 })

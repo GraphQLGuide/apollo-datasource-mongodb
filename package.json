@@ -1,6 +1,6 @@
 {
   "name": "apollo-datasource-mongodb",
-  "version": "0.5.4",
+  "version": "0.6.0",
   "description": "Apollo data source for MongoDB",
   "main": "dist/index.js",
   "types": "index.d.ts",
@@ -17,15 +17,9 @@
     "node": ">=8"
   },
   "dependencies": {
-    "@types/mongodb": "^3.5.27",
-    "apollo-datasource": "^0.3.1",
-    "apollo-server-caching": "^0.3.1",
-    "apollo-server-errors": "^2.4.1",
-    "bson": "^4.1.0",
+    "@apollo/utils.keyvaluecache": "^3.0.0",
+    "bson": "^5.4.0",
     "dataloader": "^1.4.0"
-  },
-  "peerDependencies": {
-    "mongoose": "*"
   },
   "devDependencies": {
     "@babel/cli": "^7.10.3",
@@ -34,8 +28,8 @@
     "babel-jest": "^24.9.0",
     "graphql": "^14.6.0",
     "jest": "^24.9.0",
-    "mongodb": "^3.5.9",
-    "mongoose": "^5.13.8",
+    "mongodb": "^5.7.0",
+    "mongoose": "^7.3.2",
     "prettier": "^1.19.1",
     "release": "^6.3.0",
     "waait": "^1.0.5"
