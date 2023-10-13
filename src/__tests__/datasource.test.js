@@ -106,7 +106,7 @@ describe('Mongoose', () => {
     const user = await users.findOneById(alice._id)
 
     expect(user.name).toBe('Alice')
-    expect(user.id).toBe(alice._id.toString())
+    expect(user._id.toString()).toBe(alice._id.toString())
   })
 
   test('Data Source with Collection', async () => {
