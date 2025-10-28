@@ -1,8 +1,9 @@
 import { MongoClient, ObjectId } from 'mongodb'
 import mongoose, { Schema, model } from 'mongoose'
+import { describe, it, expect, test } from '@jest/globals'
 
 import { MongoDataSource } from '../datasource'
-import { isModel, isCollectionOrModel, getCollection } from '../helpers'
+import { isModel, isCollectionOrModel, getCollection, log } from '../helpers'
 
 class Users extends MongoDataSource {
   constructor(options) {
@@ -14,7 +15,7 @@ class Users extends MongoDataSource {
 describe('MongoDataSource', () => {
   it('sets up caching functions', () => {
     const users = {}
-    const source = new Users({modelOrCollection: users})
+    const source = new Users({ modelOrCollection: users })
 
     expect(source.findOneById).toBeDefined()
     expect(source.findByFields).toBeDefined()
@@ -25,17 +26,10 @@ describe('MongoDataSource', () => {
 })
 
 const URL = 'mongodb://localhost:27017/test-apollo-datasource'
-const connectArgs = [
-  URL,
-  {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-  }
-]
 
 const connect = async () => {
-  const client = new MongoClient(...connectArgs)
-  await mongoose.connect(...connectArgs)
+  const client = new MongoClient(URL)
+  await mongoose.connect(URL)
   await client.connect()
   return client.db()
 }
@@ -47,10 +41,9 @@ describe('Mongoose', () => {
   let UserModel
   let userCollection
   let alice
-  let nestedBob
 
   beforeAll(async () => {
-    const userSchema = new Schema({ name: 'string' })
+    const userSchema = new Schema({ name: 'string' }, { id: true })
     UserModel = model('User', userSchema)
 
     const db = await connect()
@@ -61,7 +54,7 @@ describe('Mongoose', () => {
       { upsert: true, new: true }
     )
 
-    nestedBob = await userCollection.findOneAndReplace(
+    await userCollection.findOneAndReplace(
       { name: 'Bob' },
       { name: 'Bob', nested: { _id: objectID, field1: 'value1', field2: '' } },
       { new: true, upsert: true }
@@ -106,15 +99,27 @@ describe('Mongoose', () => {
     const user = await users.findOneById(alice._id)
 
     expect(user.name).toBe('Alice')
+    // Without lean it should return getters
     expect(user.id).toBe(alice._id.toString())
   })
 
-  test('Data Source with Collection', async () => {
-    const users = new Users({ modelOrCollection: userCollection})
+  test('Data Source with Model lean', async () => {
+    const users = new Users({
+      modelOrCollection: UserModel,
+      options: { lean: true }
+    })
     const user = await users.findOneById(alice._id)
 
     expect(user.name).toBe('Alice')
+    // With lean it shouldn't return getters
     expect(user.id).toBeUndefined()
+  })
+
+  test('Data Source with Collection', async () => {
+    const users = new Users({ modelOrCollection: userCollection })
+    const user = await users.findOneById(alice._id)
+
+    expect(user.name).toBe('Alice')
   })
 
   test('nested findByFields', async () => {
@@ -132,13 +137,19 @@ describe('Mongoose', () => {
   })
 
   test('Data Source with Context', async () => {
-    const users = new Users({ modelOrCollection: UserModel, context: { token: '123' }})
-    
+    const users = new Users({
+      modelOrCollection: UserModel,
+      context: { token: '123' }
+    })
+
     expect(users.context.token).toBe('123')
   })
 
   test('Data Source with Context that contains a User', async () => {
-    const users = new Users({ modelOrCollection: userCollection, context: { user: alice }})
+    const users = new Users({
+      modelOrCollection: userCollection,
+      context: { user: alice }
+    })
     const user = await users.findOneById(alice._id)
 
     expect(user.name).toBe('Alice')

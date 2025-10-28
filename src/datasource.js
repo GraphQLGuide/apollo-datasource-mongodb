@@ -5,7 +5,7 @@ import { createCachingMethods } from './cache'
 import { isCollectionOrModel, isModel } from './helpers'
 
 class MongoDataSource {
-  constructor({ modelOrCollection, cache }) {
+  constructor({ modelOrCollection, cache, options }) {
     if (!isCollectionOrModel(modelOrCollection)) {
       throw new GraphQLError(
         'MongoDataSource constructor must be given a collection or Mongoose model'
@@ -22,7 +22,8 @@ class MongoDataSource {
     const methods = createCachingMethods({
       collection: this.collection,
       model: this.model,
-      cache: cache || new InMemoryLRUCache()
+      cache: cache || new InMemoryLRUCache(),
+      options
     })
 
     Object.assign(this, methods)

@@ -2,6 +2,7 @@ import { InMemoryLRUCache } from '@apollo/utils.keyvaluecache'
 import wait from 'waait'
 import { ObjectId } from 'mongodb'
 import { EJSON } from 'bson'
+import { describe, it, expect } from '@jest/globals'
 
 import {
   createCachingMethods,
@@ -10,8 +11,6 @@ import {
   prepFields,
   getNestedValue
 } from '../cache'
-
-import { log } from '../helpers'
 
 const hexId = '5cf82e14a220a607eb64a7d4'
 const objectID = new ObjectId(hexId)
@@ -39,16 +38,19 @@ const stringDoc = {
 }
 
 const collectionName = 'test'
-const cacheKeyById = id => `mongo-${collectionName}-${idToString(id)}`
+const cacheKeyById = id => `${collectionName}:${idToString(id)}`
 const cacheKeyByFields = fields => {
   const { loaderKey } = prepFields(fields)
 
-  return `mongo-${collectionName}-${loaderKey}`
+  return `${collectionName}:${loaderKey}`
 }
 
 describe('createCachingMethods', () => {
+  /** @type {{ collectionName: string, find: import('@jest/globals').jest.Mock<any, any> }} */
   let collection
+  /** @type {ReturnType<createCachingMethods>} */
   let api
+  /** @type {import('@apollo/utils.keyvaluecache').KeyValueCache<object>} */
   let cache
 
   beforeEach(() => {
@@ -119,6 +121,19 @@ describe('createCachingMethods', () => {
     expect(api.deleteFromCacheByFields).toBeDefined()
   })
 
+  it('adds key prefix', async () => {
+    const keyPrefix = 'prefix:'
+    const api = createCachingMethods({
+      collection,
+      cache,
+      options: { keyPrefix }
+    })
+
+    await api.findOneById(docs.one._id, { ttl: 1 })
+    const doc = await cache.get(keyPrefix + cacheKeyById(docs.one._id))
+    expect(doc).toBe(EJSON.stringify(docs.one))
+  })
+
   it('finds one with ObjectId', async () => {
     const doc = await api.findOneById(docs.one._id)
     expect(doc).toBe(docs.one)
@@ -140,10 +155,21 @@ describe('createCachingMethods', () => {
     expect(collection.find.mock.calls.length).toBe(1)
   })
 
-  it(`memoizes with Dataloader`, async () => {
+  it('memoizes with Dataloader', async () => {
     await api.findOneById(docs.one._id)
     await api.findOneById(docs.one._id)
     expect(collection.find.mock.calls.length).toBe(1)
+  })
+
+  it("doesn't memoize with Dataloader with options.disableMemoize", async () => {
+    const api = createCachingMethods({
+      collection,
+      cache,
+      options: { disableMemoize: true }
+    })
+    await api.findOneById(docs.one._id)
+    await api.findOneById(docs.one._id)
+    expect(collection.find.mock.calls.length).toBe(2)
   })
 
   it('finds by field', async () => {
@@ -197,7 +223,7 @@ describe('createCachingMethods', () => {
     expect(collection.find.mock.calls.length).toBe(1)
   })
 
-  it(`doesn't mix filters of pending calls for different fields`, async () => {
+  it("doesn't mix filters of pending calls for different fields", async () => {
     const pendingDocs1 = api.findByFields({ foo: 'bar' })
     const pendingDocs2 = api.findByFields({ tags: 'baz' })
     const [foundDocs1, foundDocs2] = await Promise.all([
@@ -214,7 +240,7 @@ describe('createCachingMethods', () => {
     expect(collection.find.mock.calls.length).toBe(1)
   })
 
-  it(`dataloader caches each value individually when finding by a single field`, async () => {
+  it('dataloader caches each value individually when finding by a single field', async () => {
     await api.findByFields({ tags: ['foo', 'baz'] }, { ttl: 1 })
 
     const fooBazCacheValue = await cache.get(
@@ -229,14 +255,14 @@ describe('createCachingMethods', () => {
     expect(collection.find.mock.calls.length).toBe(1)
   })
 
-  it(`doesn't cache without ttl`, async () => {
+  it("doesn't cache without ttl", async () => {
     await api.findOneById(docs.one._id)
 
     const value = await cache.get(cacheKeyById(docs.one._id))
     expect(value).toBeUndefined()
   })
 
-  it(`caches by ID`, async () => {
+  it('caches by ID', async () => {
     await api.findOneById(docs.one._id, { ttl: 1 })
     const value = await cache.get(cacheKeyById(docs.one._id))
     expect(value).toEqual(EJSON.stringify(docs.one))
@@ -245,7 +271,7 @@ describe('createCachingMethods', () => {
     expect(collection.find.mock.calls.length).toBe(1)
   })
 
-  it(`caches non-array field values as arrays`, async () => {
+  it('caches non-array field values as arrays', async () => {
     const fields = { tags: 'foo' }
     await api.findByFields(fields, { ttl: 1 })
     const value = await cache.get(cacheKeyByFields(fields))
@@ -255,7 +281,7 @@ describe('createCachingMethods', () => {
     expect(collection.find.mock.calls.length).toBe(1)
   })
 
-  it(`caches ID with ttl`, async () => {
+  it('caches ID with ttl', async () => {
     await api.findOneById(docs.one._id, { ttl: 1 })
     await wait(1001)
 
@@ -263,7 +289,7 @@ describe('createCachingMethods', () => {
     expect(value).toBeUndefined()
   })
 
-  it(`deletes from cache by ID`, async () => {
+  it('deletes from cache by ID', async () => {
     for (const doc of [docs.one, docs.two, stringDoc]) {
       await api.findOneById(doc._id, { ttl: 1 })
 
@@ -292,7 +318,7 @@ describe('createCachingMethods', () => {
     }
   })
 
-  it(`deletes from cache by fields`, async () => {
+  it('deletes from cache by fields', async () => {
     const fields = { foo: 'bar' }
     await api.findByFields(fields, { ttl: 1 })
 
@@ -309,7 +335,7 @@ describe('createCachingMethods', () => {
 describe('isValidObjectIdString', () => {
   it('works', () => {
     const trickyId = 'toptoptoptop'
-    expect(ObjectId.isValid(trickyId)).toBe(true)
+    expect(ObjectId.isValid(trickyId)).toBe(false)
     expect(isValidObjectIdString(trickyId)).toBe(false)
     expect(isValidObjectIdString(hexId)).toBe(true)
   })

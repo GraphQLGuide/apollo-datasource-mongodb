@@ -1,9 +1,12 @@
+import { EJSON } from 'bson'
 import DataLoader from 'dataloader'
 import { ObjectId } from 'mongodb'
-import { EJSON } from 'bson'
 
 import { getCollection, log } from './helpers'
 
+/**
+ * @param {string | ObjectId} id
+ */
 export const idToString = id => {
   if (id instanceof ObjectId) {
     return id.toHexString()
@@ -12,10 +15,16 @@ export const idToString = id => {
   }
 }
 
-// https://www.geeksforgeeks.org/how-to-check-if-a-string-is-valid-mongodb-objectid-in-nodejs/
-export const isValidObjectIdString = string =>
-  ObjectId.isValid(string) && String(new ObjectId(string)) === string
+/**
+ * https://www.geeksforgeeks.org/how-to-check-if-a-string-is-valid-mongodb-objectid-in-nodejs/
+ * @param {string} str
+ */
+export const isValidObjectIdString = str =>
+  ObjectId.isValid(str) && String(new ObjectId(str)) === str
 
+/**
+ * @param {string | ObjectId} string
+ */
 export const stringToId = string => {
   if (string instanceof ObjectId) {
     return string
@@ -28,6 +37,9 @@ export const stringToId = string => {
   return string
 }
 
+/**
+ * @param {Record<string, unknown>} fields
+ */
 export function prepFields(fields) {
   const cleanedFields = {}
 
@@ -44,28 +56,35 @@ export function prepFields(fields) {
   return { loaderKey: EJSON.stringify(cleanedFields), cleanedFields }
 }
 
-// getNestedValue({ nested: { foo: 'bar' } }, 'nested.foo')
-// => 'bar'
-export function getNestedValue(object, string) {
-  string = string.replace(/\[(\w+)\]/g, '.$1') // convert indexes to properties
-  string = string.replace(/^\./, '') // strip a leading dot
-  var a = string.split('.')
+/**
+ * @param {object} obj
+ * @param {string} str
+ * @example getNestedValue({ nested: { foo: 'bar' } }, 'nested.foo') => 'bar'
+ */
+export function getNestedValue(obj, str) {
+  str = str.replace(/\[(\w+)\]/g, '.$1') // convert indexes to properties
+  str = str.replace(/^\./, '') // strip a leading dot
+  var a = str.split('.')
   for (var i = 0, n = a.length; i < n; ++i) {
     var k = a[i]
-    if (k in object) {
-      object = object[k]
+    if (k in obj) {
+      obj = obj[k]
     } else {
       return
     }
   }
-  return object
+  return obj
 }
 
-// https://github.com/graphql/dataloader#batch-function
-// "The Array of values must be the same length as the Array of keys."
-// "Each index in the Array of values must correspond to the same index in the Array of keys."
-const orderDocs = (fieldsArray, docs) =>
-  fieldsArray.map(fields =>
+/**
+ * https://github.com/graphql/dataloader#batch-function
+ * @description "The Array of values must be the same length as the Array of keys."
+ * @description "Each index in the Array of values must correspond to the same index in the Array of keys."
+ * @param {Array<Record<string | number, unknown>>} fieldsArray
+ * @param {Array<Record<string | number, unknown>>} docs
+ */
+function orderDocs(fieldsArray, docs) {
+  return fieldsArray.map(fields =>
     docs.filter(doc => {
       for (let fieldName of Object.keys(fields)) {
         const fieldValue = getNestedValue(fields, fieldName)
@@ -93,61 +112,80 @@ const orderDocs = (fieldsArray, docs) =>
       return true
     })
   )
+}
 
-export const createCachingMethods = ({ collection, model, cache }) => {
-  const loader = new DataLoader(async ejsonArray => {
-    const fieldsArray = ejsonArray.map(EJSON.parse)
-    log('fieldsArray', fieldsArray)
+/**
+ *
+ * @param {{
+ *  collection: import('mongodb').Collection
+ *  model: import('mongoose').Model
+ *  cache: import('@apollo/utils.keyvaluecache').KeyValueCache
+ *  options?: import('apollo-datasource-mongodb').MongoDataSourceOptions
+ * }} params
+ */
+export function createCachingMethods({ collection, model, cache, options }) {
+  const loader = new DataLoader(
+    async ejsonArray => {
+      const fieldsArray = ejsonArray.map(EJSON.parse)
+      log('fieldsArray', fieldsArray)
 
-    const filterArray = fieldsArray.reduce((filterArray, fields) => {
-      const existingFieldsFilter = filterArray.find(
-        filter =>
-          [...Object.keys(filter)].sort().join() ===
-          [...Object.keys(fields)].sort().join()
-      )
-      const filter = existingFieldsFilter || {}
+      const filterArray = fieldsArray.reduce((filterArray, fields) => {
+        const existingFieldsFilter = filterArray.find(
+          filter =>
+            Object.keys(filter)
+              .sort()
+              .join() ===
+            Object.keys(fields)
+              .sort()
+              .join()
+        )
+        const filter = existingFieldsFilter || {}
 
-      for (const fieldName in fields) {
-        if (typeof fields[fieldName] === 'undefined') continue
-        if (!filter[fieldName]) filter[fieldName] = { $in: [] }
-        let newVals = Array.isArray(fields[fieldName])
-          ? fields[fieldName]
-          : [fields[fieldName]]
+        for (const fieldName in fields) {
+          if (typeof fields[fieldName] === 'undefined') continue
+          if (!filter[fieldName]) filter[fieldName] = { $in: [] }
+          let newVals = Array.isArray(fields[fieldName])
+            ? fields[fieldName]
+            : [fields[fieldName]]
 
-        filter[fieldName].$in = [
-          ...filter[fieldName].$in,
-          ...newVals
-            .map(stringToId)
-            .filter(val => !filter[fieldName].$in.includes(val))
-        ]
-      }
-      if (existingFieldsFilter) return filterArray
-      return [...filterArray, filter]
-    }, [])
-    log('filterArray: ', filterArray)
+          filter[fieldName].$in = [
+            ...filter[fieldName].$in,
+            ...newVals
+              .map(stringToId)
+              .filter(val => !filter[fieldName].$in.includes(val))
+          ]
+        }
+        if (existingFieldsFilter) return filterArray
+        return [...filterArray, filter]
+      }, [])
+      log('filterArray: ', filterArray)
 
-    const filter =
-      filterArray.length === 1
-        ? filterArray[0]
-        : {
-            $or: filterArray
-          }
-    log('filter: ', filter)
+      const filter =
+        filterArray.length === 1
+          ? filterArray[0]
+          : {
+              $or: filterArray
+            }
+      log('filter: ', filter)
 
-    const findPromise = model
-      ? model.find(filter).exec()
-      : collection.find(filter).toArray()
+      const findPromise = model
+        ? model.find(filter, undefined, { lean: options?.lean })
+        : collection.find(filter).toArray()
 
-    const results = await findPromise
-    log('results: ', results)
+      const results = await findPromise
+      log('results: ', results)
 
-    const orderedDocs = orderDocs(fieldsArray, results)
-    log('orderedDocs: ', orderedDocs)
+      const orderedDocs = orderDocs(fieldsArray, results)
+      log('orderedDocs: ', orderedDocs)
 
-    return orderedDocs
-  })
+      return orderedDocs
+    },
+    { cache: !options?.disableMemoize }
+  )
 
-  const cachePrefix = `mongo-${getCollection(collection).collectionName}-`
+  const cachePrefix = `${options?.keyPrefix ?? ''}${
+    getCollection(collection).collectionName
+  }:`
 
   const methods = {
     findOneById: async (_id, { ttl } = {}) => {
@@ -178,6 +216,7 @@ export const createCachingMethods = ({ collection, model, cache }) => {
 
       const cacheDoc = await cache.get(cacheKey)
       if (cacheDoc) {
+        log('cacheDoc', cacheDoc)
         return EJSON.parse(cacheDoc)
       }
 
@@ -195,11 +234,14 @@ export const createCachingMethods = ({ collection, model, cache }) => {
           })
         )
         docs = [].concat(...docsArray)
+        log('docsArray', docsArray)
       } else {
+        log('loader.load', loaderKey)
         docs = await loader.load(loaderKey)
       }
 
       if (Number.isInteger(ttl)) {
+        log('cache.set', cacheKey, EJSON.stringify(docs), { ttl })
         // https://github.com/apollographql/apollo-server/tree/master/packages/apollo-server-caching#apollo-server-caching
         cache.set(cacheKey, EJSON.stringify(docs), { ttl })
       }
@@ -209,7 +251,6 @@ export const createCachingMethods = ({ collection, model, cache }) => {
     deleteFromCacheById: async _id => {
       loader.clear(EJSON.stringify({ _id }))
       const cacheKey = cachePrefix + idToString(_id)
-      log('Deleting cache key: ', cacheKey)
       await cache.delete(cacheKey)
     },
     deleteFromCacheByFields: async fields => {

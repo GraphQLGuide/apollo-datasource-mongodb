@@ -7,30 +7,31 @@
   "scripts": {
     "build": "babel src -d dist --ignore **/*.test.js",
     "dev": "babel src -d dist --watch --ignore **/*.test.js",
-    "test": "jest --watch",
+    "test": "NODE_ENV=test jest --watch",
+    "test:debug": "__DEBUG=true npm run test",
     "ci": "jest --ci",
     "prepublishOnly": "npm run build",
     "format": "prettier --write **/*.js",
     "release": "release patch && echo 'A Github Action will now publish to NPM! 🚀'"
   },
   "engines": {
-    "node": ">=8"
+    "node": ">=18"
   },
   "dependencies": {
-    "@apollo/utils.keyvaluecache": "^3.0.0",
-    "bson": "^5.4.0",
-    "dataloader": "^1.4.0"
+    "@apollo/utils.keyvaluecache": "^4.0.0",
+    "bson": "^6.10.4",
+    "dataloader": "^2.2.3"
   },
   "devDependencies": {
     "@babel/cli": "^7.10.3",
     "@babel/core": "^7.10.3",
     "@babel/preset-env": "^7.10.3",
-    "babel-jest": "^24.9.0",
-    "graphql": "^14.6.0",
-    "jest": "^24.9.0",
-    "mongodb": "^5.7.0",
-    "mongoose": "^7.3.2",
-    "prettier": "^1.19.1",
+    "babel-jest": "^30.2.0",
+    "graphql": "^16.11.0",
+    "jest": "^30.2.0",
+    "mongodb": "^6.20.0",
+    "mongoose": "^8.19.2",
+    "prettier": "^3.6.2",
     "release": "^6.3.1",
     "waait": "^1.0.5"
   },

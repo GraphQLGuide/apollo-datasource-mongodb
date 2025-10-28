@@ -211,6 +211,30 @@ const { url } = await startStandaloneServer(server, {
 })
 ```
 
+### Lean
+
+To enable `lean` queries for mongoose models, add the `options.lean` to constructor:
+
+```js
+class Users extends MongoDataSource {}
+
+new Users({ modelOrCollection: UserModel, options: { lean: true } })
+```
+
+Keep in mind that it will enhance performance but will get rid of getters (like `id` enabled in mongoose schema).
+If you want to keep getters with `lean` I recommend using [mongoose-lean-getters](https://github.com/mongoosejs/mongoose-lean-getters) package.
+
+### Key prefix
+
+You can customize the key prefix for the cache by passing `options.keyPrefix` to constructor:
+
+```js
+class Users extends MongoDataSource {}
+
+// will use `users` as a key prefix
+new Users({ modelOrCollection: UserModel, options: { keyPrefix: 'prefix:' } })
+```
+
 ### Caching
 
 To enable shared application-level caching, you do everything from the above section, and you add the `ttl` (in seconds) option to `findOneById()`:
@@ -248,6 +272,18 @@ const resolvers = {
 ```
 
 Here we also call [`deleteFromCacheById()`](#deletefromcachebyid) to remove the user from the cache when the user's data changes. If we're okay with people receiving out-of-date data for the duration of our `ttl`—in this case, for as long as a minute—then we don't need to bother adding calls to `deleteFromCacheById()`.
+
+#### Disable memoization
+
+If you want to disable DataLoader memoization, you can pass `options.disableMemoize` to constructor.
+
+```js
+class Users extends MongoDataSource {}
+
+new Users({ modelOrCollection: , options: { disableMemoize: true } })
+```
+
+Disabling memoization caching will create a new `Promise` and new key in the `batchLoadFn` for every load of the same key. This is equivalent to setting `cacheMap` to `null`.
 
 ### TypeScript
 
@@ -316,7 +352,7 @@ const { url } = await startStandaloneServer(server, {
 });
 ```
 
-You can also opt to pass the entire context into your data source class. You can do so by adding a protected context member 
+You can also opt to pass the entire context into your data source class. You can do so by adding a protected context member
 to your data source class and modifying to options argument of the constructor to add a field for the context. Then, call super and
 assign the context to the member field on your data source class. Note: context needs to be a class in order to do this.
 
