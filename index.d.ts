@@ -1,11 +1,11 @@
 declare module 'apollo-datasource-mongodb' {
   import { KeyValueCache } from '@apollo/utils.keyvaluecache'
-  import { Collection as MongoCollection, ObjectId } from 'mongodb'
-  import {
-    Collection as MongooseCollection,
-    Document,
-    Model as MongooseModel,
-  } from 'mongoose'
+    import { Collection as MongoCollection, ObjectId } from 'mongodb'
+    import {
+        Document,
+        Collection as MongooseCollection,
+        Model as MongooseModel,
+    } from 'mongoose'
 
   export type Collection<T extends { [key: string]: any }, U = MongoCollection<T>> = T extends Document
     ? MongooseCollection
@@ -32,9 +32,17 @@ declare module 'apollo-datasource-mongodb' {
     ttl: number
   }
 
+  export interface MongoDataSourceOptions {
+    /** When enabled it won't return mongoose getters (like `id`) by default, if you want them back install the plugin https://github.com/mongoosejs/mongoose-lean-getters */
+    lean?: boolean
+    disableMemoize?: boolean
+    keyPrefix?: string
+  }
+
   export interface MongoDataSourceConfig<TData extends { [key: string]: any }> {
     modelOrCollection: ModelOrCollection<TData>
     cache?: KeyValueCache<TData>
+    options?: MongoDataSourceOptions
   }
 
   export class MongoDataSource<TData extends { [key: string]: any }> {
